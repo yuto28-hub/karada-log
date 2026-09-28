@@ -87,19 +87,53 @@ body{
   background:var(--surface);font-family:inherit;color:var(--ink)}
 .link{background:none;border:none;color:var(--muted);font-size:13px;text-decoration:underline;font-family:inherit;padding:0}
 .hidden{display:none}
+
+/* ---- リスト・設定画面 ---- */
+.chiphead{font-size:13px;color:var(--muted);margin-top:18px}
+.chiphead+.chips{margin-top:8px}
+.srow{gap:10px}
+.srow .itemR{gap:6px}
+.sname{flex:1;min-width:0;background:none;border:none;padding:2px 0;text-align:left;font-family:inherit;
+  color:inherit;display:flex;flex-direction:column;gap:2px}
+.sname .itemname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mv{width:34px;height:34px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);
+  font-size:16px;font-family:inherit;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.mv:disabled{opacity:.3}
+.editor{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 12px 14px;margin:8px 0 12px}
+.editor .setgrid:first-child{margin-top:0}
+.span2{grid-column:1/3}
+.setgrid select{width:100%;padding:10px;font-size:16px;border:1px solid var(--line);border-radius:8px;
+  background:var(--surface);font-family:inherit;color:var(--ink)}
+.tagrow{display:flex;gap:14px;flex-wrap:wrap;margin-top:2px}
+.tagrow label{font-size:14px;color:var(--ink);display:flex;align-items:center;gap:6px;margin:0;white-space:nowrap}
+.tagrow input{width:18px;height:18px;padding:0;margin:0;flex-shrink:0}
+.edbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.edbtns .addbtn{padding:12px 22px}
+.ghost{padding:12px 16px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;
+  font-size:15px;font-family:inherit}
+.ghost.danger{color:var(--verm);border-color:var(--verm)}
+.notice{font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+  margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.notice button{background:none;border:none;color:var(--indigo);font-weight:600;font-size:13px;font-family:inherit;padding:0;white-space:nowrap}
+.errmsg{color:var(--verm)}
+.addsel{margin-top:12px}
+@keyframes flash{from{background:rgba(79,115,85,.18)}to{background:transparent}}
+.flash{animation:flash .9s ease-out}
+@media (prefers-reduced-motion:reduce){.flash{animation:none}.gfill,.barf{transition:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top">
-    <button class="datebtn" id="prevDay">‹</button>
+    <button class="datebtn" id="prevDay" aria-label="前の日">‹</button>
     <div class="datenow num" id="dateLabel"></div>
-    <button class="datebtn" id="nextDay">›</button>
+    <button class="datebtn" id="nextDay" aria-label="次の日">›</button>
   </div>
 
   <div class="tabs">
     <button class="tab on" id="tabFood">食事</button>
     <button class="tab" id="tabGym">トレーニング</button>
+    <button class="tab" id="tabSet">設定</button>
   </div>
 
   <!-- 食事 -->
@@ -152,61 +186,14 @@ body{
         <input id="foodInput" placeholder="卵3 鮭2 ご飯1.2合 豚こま300g">
         <button class="addbtn" id="addBtn">追加</button>
       </div>
-      <div class="hint" id="hintText">食材と数をまとめて入力できます。数字だけなら卵・納豆は個数、肉・魚のgもそのまま。</div>
-      <div class="chips" id="chips"></div>
+      <div class="hint" id="hintText"></div>
+      <div id="chips"></div>
+      <button class="link" id="toSettings" style="margin-top:14px">リストを並べ替える・編集する</button>
     </div>
 
     <div class="sec">
       <div class="sectitle">食べたもの</div>
       <div id="mealList"></div>
-    </div>
-
-    <div class="sec">
-      <button class="link" id="setToggle">目標を変える</button>
-      <div class="setgrid hidden" id="setGrid"></div>
-    </div>
-
-    <div class="sec">
-      <button class="link" id="foodMgrToggle">食材を追加・管理する</button>
-      <div class="hidden" id="foodMgr">
-        <div class="hint" style="margin:10px 0 4px">
-          未登録の食材を自分で追加できます。栄養値がわからないときは、Claudeに「◯◯の栄養は?」と聞いてこの欄に入れてください。
-        </div>
-        <div class="setgrid">
-          <div style="grid-column:1/3"><label>名前（例：ホッケ）</label><input id="nf_name" placeholder="ホッケ"></div>
-          <div style="grid-column:1/3"><label>呼び名（カンマ区切り・空欄なら名前だけ）</label><input id="nf_alias" placeholder="ほっけ,ホッケ,𩸽"></div>
-          <div><label>数え方</label>
-            <select id="nf_type" class="wsel" style="padding:10px">
-              <option value="weight">グラムで数える（肉・魚・野菜）</option>
-              <option value="count">個数で数える（卵・パックなど）</option>
-            </select>
-          </div>
-          <div id="nf_unitwrap" class="hidden"><label>単位（個・切れ・杯など）</label><input id="nf_unit" placeholder="切れ"></div>
-          <div id="nf_gwrap" class="hidden"><label>1単位のグラム</label><input id="nf_g" type="number" inputmode="numeric" placeholder="80"></div>
-        </div>
-        <div class="hint" id="nf_basis" style="margin:8px 0 2px">↓ 100gあたりの数値を入力</div>
-        <div class="setgrid">
-          <div><label>たんぱく質 g</label><input id="nf_p" type="number" inputmode="decimal" placeholder="17"></div>
-          <div><label>カロリー kcal</label><input id="nf_kcal" type="number" inputmode="numeric" placeholder="110"></div>
-          <div><label>炭水化物 g（任意）</label><input id="nf_c" type="number" inputmode="decimal" placeholder="0"></div>
-          <div><label>脂質 g（任意）</label><input id="nf_f" type="number" inputmode="decimal" placeholder="3"></div>
-          <div><label>カルシウム mg（任意）</label><input id="nf_ca" type="number" inputmode="numeric" placeholder="0"></div>
-          <div><label>ビタミンE mg（任意）</label><input id="nf_ve" type="number" inputmode="decimal" placeholder="0"></div>
-          <div style="grid-column:1/3"><label>イソフラボン mg（大豆製品のみ・任意）</label><input id="nf_iso" type="number" inputmode="decimal" placeholder="0"></div>
-          <div style="grid-column:1/3"><label>種類タグ（任意・複数可）</label>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">
-              <label style="font-size:13px;color:var(--ink)"><input type="checkbox" id="nf_fish"> 魚</label>
-              <label style="font-size:13px;color:var(--ink)"><input type="checkbox" id="nf_greens"> 緑黄色野菜</label>
-              <label style="font-size:13px;color:var(--ink)"><input type="checkbox" id="nf_ferment"> 発酵食品</label>
-              <label style="font-size:13px;color:var(--ink)"><input type="checkbox" id="nf_soy"> 大豆</label>
-            </div>
-          </div>
-        </div>
-        <button class="addbtn" id="nf_save" style="margin-top:12px;width:100%;padding:13px">食材を保存</button>
-        <div class="hint" id="nf_msg"></div>
-
-        <div id="userFoodList" style="margin-top:16px"></div>
-      </div>
     </div>
   </div>
 
@@ -228,99 +215,161 @@ body{
       <div id="workoutList"></div>
     </div>
   </div>
+
+  <!-- 設定 -->
+  <div id="setPane" class="hidden"></div>
 </div>
 
 <script>
 /* ============ 食材データベース ============
-   type 'count'  … 個/切れ/合など。g があれば g 入力も換算
-   type 'weight' … 100g あたりの値
-   n: p=たんぱく質 kcal c=炭水化物 f=脂質 ca=カルシウムmg ve=ビタミンEmg iso=イソフラボンmg
-   tag: fish / greens / ferment / soy
-   ★ = 裕人の確定値（ナレッジ§5）
+   type 'count'  … 個・切れ・合などで数える。n は「1単位あたり」。g は1単位のグラム
+   type 'weight' … グラムで数える。n は「100gあたり」。pieceG は「1本」「1切れ」と書いたときのグラム
+   n: p=たんぱく質g kcal c=炭水化物g f=脂質g ca=カルシウムmg ve=ビタミンE(α-トコフェロール)mg iso=イソフラボンmg
+   tag: fish=魚 / greens=緑黄色野菜 / ferment=発酵食品 / soy=大豆
+   ★ = 裕人の確定値（たんぱく質）。それ以外は日本食品標準成分表（八訂）を基にした値
 =========================================== */
 const BUILTIN_FOODS=[
-// たんぱく質（★確定値）
-{id:"egg",name:"卵",alias:["卵","たまご","タマゴ","玉子","ゆで卵","目玉焼き","卵焼き"],type:"count",unit:"個",g:50,n:{p:7,kcal:80,c:.2,f:5.7,ca:26,ve:.5,iso:0}},
-{id:"natto",name:"納豆",alias:["納豆","なっとう","ナットウ"],type:"count",unit:"パック",g:45,n:{p:7.4,kcal:90,c:6,f:5,ca:45,ve:.5,iso:36},tag:["ferment","soy"]},
-{id:"soymilk",name:"豆乳",alias:["豆乳","とうにゅう"],type:"count",unit:"100ml",g:100,n:{p:5,kcal:50,c:3,f:2,ca:15,ve:.1,iso:22},tag:["soy"]},
-{id:"soypro",name:"ソイプロテイン",alias:["ソイプロテイン","ソイプロ","プロテイン","そいぷろ"],type:"count",unit:"杯",g:20,n:{p:16.4,kcal:110,c:2,f:1,ca:60,ve:0,iso:40},tag:["soy"]},
-{id:"salmon",name:"鮭",alias:["鮭","サケ","さけ","サーモン","しゃけ"],type:"count",unit:"切れ",g:80,n:{p:17.5,kcal:150,c:0,f:8,ca:11,ve:1,iso:0},tag:["fish"]},
-{id:"saba",name:"鯖",alias:["鯖","サバ","さば"],type:"count",unit:"切れ",g:90,n:{p:18,kcal:200,c:0,f:14,ca:8,ve:.6,iso:0},tag:["fish"]},
-{id:"ham",name:"ロースハム",alias:["ロースハム","ハム","はむ"],type:"count",unit:"50g",g:50,n:{p:8.5,kcal:110,c:1,f:7,ca:4,ve:.2,iso:0}},
-{id:"yogurt",name:"ヨーグルト",alias:["ヨーグルト","ギリシャヨーグルト","よーぐると"],type:"count",unit:"200g",g:200,n:{p:6,kcal:120,c:10,f:6,ca:240,ve:.2,iso:0},tag:["ferment"]},
-{id:"rice",name:"ご飯",alias:["ご飯","白米","ごはん","米","飯"],type:"count",unit:"合",g:330,n:{p:8,kcal:530,c:118,f:1,ca:8,ve:0,iso:0}},
-// たんぱく質（概算）
-{id:"iwashi",name:"イワシ缶",alias:["イワシ缶","いわし缶","鰯缶","イワシ","いわし"],type:"count",unit:"缶",g:100,n:{p:20,kcal:170,c:.5,f:11,ca:320,ve:2.1,iso:0},tag:["fish"]},
+// ---- たんぱく質・炭水化物リスト ----
+{id:"sasami",name:"鶏ささみ",alias:["鶏ささみ","鳥ささみ","ささみ","ササミ","笹身"],type:"weight",unit:"g",pieceG:50,n:{p:23.9,kcal:98,c:.1,f:.8,ca:4,ve:.7,iso:0}},
+{id:"chickenbreast",name:"鶏むね（皮なし）",alias:["鶏むね","鳥むね","鶏胸","とりむね","むね肉","ムネ肉","胸肉"],type:"weight",unit:"g",n:{p:23.3,kcal:105,c:.1,f:1.9,ca:4,ve:.3,iso:0}},
+{id:"liver",name:"牛レバー",alias:["牛レバー","レバー"],type:"weight",unit:"g",n:{p:19.6,kcal:119,c:3.7,f:3.7,ca:5,ve:.3,iso:0}},
+{id:"porkloin",name:"豚ロース",alias:["豚ロース","ぶたロース","ロース肉","ロース"],type:"weight",unit:"g",n:{p:19.3,kcal:248,c:.2,f:19.2,ca:4,ve:.3,iso:0}},
+{id:"pork",name:"豚こま",alias:["豚こま","豚コマ","豚小間","豚切り落とし","豚肉","ぶたこま","豚","しゃぶしゃぶ"],type:"weight",unit:"g",n:{p:18.5,kcal:201,c:.2,f:14.6,ca:4,ve:.3,iso:0}},
+{id:"beefkoma",name:"牛こま",alias:["牛こま","牛コマ","牛小間","牛切り落とし","牛肉"],type:"weight",unit:"g",n:{p:17.1,kcal:231,c:.3,f:19.8,ca:4,ve:.5,iso:0}},
+{id:"chickenthigh",name:"鶏もも（皮つき）",alias:["鶏もも","鳥もも","とりもも","もも肉","鶏肉","鳥肉","とり肉"],type:"weight",unit:"g",n:{p:16.6,kcal:190,c:0,f:14.2,ca:5,ve:.7,iso:0}},
+{id:"natto",name:"納豆",alias:["納豆","なっとう","ナットウ"],type:"count",unit:"パック",g:45,n:{p:7.4,kcal:86,c:5.4,f:4.5,ca:41,ve:.2,iso:36},tag:["ferment","soy"]}, // ★
+{id:"egg",name:"卵",alias:["卵","たまご","タマゴ","玉子","ゆで卵","目玉焼き","卵焼き","温泉卵"],type:"count",unit:"個",g:57,n:{p:7,kcal:81,c:.2,f:5.8,ca:26,ve:.7,iso:0}}, // ★
+{id:"soymilk",name:"豆乳",alias:["豆乳","とうにゅう","無調整豆乳"],type:"count",unit:"100ml",g:100,n:{p:5,kcal:50,c:3,f:2,ca:15,ve:.1,iso:22},tag:["soy"]}, // ★
+{id:"soypro",name:"ソイプロテイン",alias:["ソイプロテイン","ソイプロ","プロテイン","そいぷろ"],type:"count",unit:"杯",g:20,n:{p:16.4,kcal:80,c:1.5,f:.8,ca:40,ve:0,iso:40},tag:["soy"]}, // ★ カロリー等は推定
+{id:"soba",name:"そば（乾麺）",alias:["そば","蕎麦","ソバ","八割そば","十割そば","ざるそば"],type:"weight",unit:"g",n:{p:14,kcal:344,c:72.4,f:2.3,ca:24,ve:.3,iso:0}},
+{id:"pasta",name:"パスタ（乾）",alias:["パスタ","スパゲッティ","スパゲティ","全粒粉パスタ","マカロニ"],type:"weight",unit:"g",n:{p:12.9,kcal:347,c:73.1,f:1.8,ca:18,ve:.3,iso:0}},
+{id:"rice",name:"ご飯",alias:["ご飯","白米","ごはん","米","飯","ライス"],type:"count",unit:"合",g:330,n:{p:8,kcal:515,c:122,f:1,ca:10,ve:0,iso:0}}, // ★
+
+// ---- 美容リスト ----
+{id:"saba",name:"鯖",alias:["鯖","サバ","さば"],type:"count",unit:"切れ",g:90,n:{p:18,kcal:190,c:.3,f:15.1,ca:5,ve:1.2,iso:0},tag:["fish"]}, // ★
+{id:"sabacan",name:"鯖缶",alias:["鯖缶","サバ缶","さば缶","鯖水煮","サバ水煮","さば水煮"],type:"count",unit:"缶",g:150,n:{p:31.4,kcal:261,c:.3,f:16.1,ca:390,ve:4.8,iso:0},tag:["fish"]},
+{id:"benizake",name:"紅鮭",alias:["紅鮭","べにざけ","ベニザケ","紅しゃけ","紅サケ"],type:"count",unit:"切れ",g:80,n:{p:18,kcal:102,c:.1,f:3.6,ca:8,ve:1,iso:0},tag:["fish"]},
+{id:"komatsuna",name:"小松菜",alias:["小松菜","こまつな","コマツナ"],type:"weight",unit:"g",n:{p:1.5,kcal:13,c:2.4,f:.2,ca:170,ve:.9,iso:0},tag:["greens"]},
+{id:"spinach",name:"ほうれん草",alias:["ほうれん草","ホウレンソウ","ほうれんそう","冷凍ほうれん草"],type:"weight",unit:"g",n:{p:2.9,kcal:22,c:3.4,f:.3,ca:100,ve:2.6,iso:0},tag:["greens"]},
+{id:"tomatocan",name:"トマト缶",alias:["トマト缶","ホールトマト","カットトマト","トマト水煮","トマトソース"],type:"weight",unit:"g",n:{p:.9,kcal:21,c:4.4,f:.2,ca:9,ve:1.2,iso:0},tag:["greens"]},
+{id:"tomatojuice",name:"トマトジュース",alias:["トマトジュース"],type:"count",unit:"200ml",g:200,n:{p:1.4,kcal:31,c:8.2,f:.2,ca:12,ve:1.4,iso:0},tag:["greens"]},
+{id:"almond",name:"アーモンド",alias:["アーモンド","素焼きアーモンド","ナッツ","あーもんど"],type:"count",unit:"20g",g:20,n:{p:4.1,kcal:122,c:4.1,f:10.8,ca:52,ve:5.8,iso:0}},
+{id:"mikan",name:"みかん",alias:["みかん","ミカン","蜜柑","温州みかん"],type:"count",unit:"個",g:75,n:{p:.5,kcal:37,c:9,f:.1,ca:16,ve:.3,iso:0}},
+{id:"kiwi",name:"キウイ",alias:["キウイ","キュウイ","きうい","グリーンキウイ"],type:"count",unit:"個",g:85,n:{p:.9,kcal:43,c:11.4,f:.2,ca:22,ve:1.1,iso:0}},
+{id:"iwashi",name:"イワシ缶",alias:["イワシ缶","いわし缶","鰯缶","イワシ","いわし","鰯"],type:"count",unit:"缶",g:150,n:{p:31.1,kcal:252,c:.2,f:15.9,ca:480,ve:4.2,iso:0},tag:["fish"]},
+{id:"broccoli",name:"ブロッコリー",alias:["ブロッコリー","ぶろっこりー","冷凍ブロッコリー"],type:"weight",unit:"g",n:{p:3.9,kcal:30,c:4.3,f:.4,ca:41,ve:2.7,iso:0},tag:["greens"]},
+{id:"redpaprika",name:"赤パプリカ",alias:["赤パプリカ","パプリカ","赤ピーマン"],type:"count",unit:"個",g:130,n:{p:1.3,kcal:36,c:9.4,f:.3,ca:9,ve:5.6,iso:0},tag:["greens"]},
+{id:"carrot",name:"にんじん",alias:["にんじん","ニンジン","人参"],type:"weight",unit:"g",n:{p:.7,kcal:30,c:8.7,f:.1,ca:26,ve:.4,iso:0},tag:["greens"]},
+{id:"kabocha",name:"かぼちゃ",alias:["かぼちゃ","カボチャ","南瓜","冷凍かぼちゃ"],type:"weight",unit:"g",n:{p:2.2,kcal:75,c:18.5,f:.3,ca:25,ve:4.2,iso:0},tag:["greens"]},
+{id:"cocoa",name:"純ココア",alias:["純ココア","ココア","ピュアココア"],type:"count",unit:"大さじ",g:6,n:{p:1.1,kcal:23,c:2.5,f:1.3,ca:8,ve:0,iso:0}},
+{id:"greentea",name:"緑茶",alias:["緑茶","お茶","せん茶","煎茶"],type:"count",unit:"杯",g:150,n:{p:.3,kcal:3,c:.3,f:0,ca:5,ve:0,iso:0}},
+{id:"avocado",name:"アボカド",alias:["アボカド","アボガド"],type:"count",unit:"個",g:140,n:{p:2.9,kcal:246,c:11.1,f:24.5,ca:11,ve:4.6,iso:0}},
+{id:"blueberry",name:"ブルーベリー",alias:["ブルーベリー","ぶるーべりー","冷凍ブルーベリー"],type:"weight",unit:"g",n:{p:.5,kcal:48,c:12.9,f:.1,ca:8,ve:1.7,iso:0}},
+{id:"madai",name:"真鯛",alias:["真鯛","鯛","マダイ","まだい"],type:"count",unit:"切れ",g:80,n:{p:16.7,kcal:128,c:.1,f:7.5,ca:10,ve:1.9,iso:0},tag:["fish"]},
+{id:"oyster",name:"牡蠣",alias:["牡蠣","牡蛎","カキ","生牡蠣"],type:"count",unit:"個",g:18,n:{p:1.2,kcal:10,c:.9,f:.4,ca:15,ve:.2,iso:0},tag:["fish"]},
+{id:"mekabu",name:"めかぶ",alias:["めかぶ","メカブ","もずく"],type:"count",unit:"パック",g:40,n:{p:.4,kcal:6,c:1.4,f:.2,ca:31,ve:0,iso:0}},
+{id:"wakame",name:"わかめ",alias:["わかめ","ワカメ","海藻"],type:"count",unit:"食",g:20,n:{p:.4,kcal:8,c:.8,f:.1,ca:26,ve:.1,iso:0}},
+{id:"kimchi",name:"キムチ",alias:["キムチ","きむち"],type:"count",unit:"50g",g:50,n:{p:1.2,kcal:14,c:2.7,f:.1,ca:25,ve:.3,iso:0},tag:["ferment"]},
+{id:"yogurt",name:"ヨーグルト",alias:["ヨーグルト","ギリシャヨーグルト","よーぐると"],type:"count",unit:"200g",g:200,n:{p:6,kcal:120,c:10,f:6,ca:240,ve:.2,iso:0},tag:["ferment"]}, // ★
+{id:"sprout",name:"ブロッコリースプラウト",alias:["ブロッコリースプラウト","ブロッコリースーパースプラウト","スーパースプラウト","スプラウト","かいわれ"],type:"count",unit:"パック",g:40,n:{p:.8,kcal:7,c:1,f:.2,ca:23,ve:.8,iso:0},tag:["greens"]},
+
+// ---- リストには入れていないが、入力欄で使えるもの ----
+{id:"salmon",name:"鮭",alias:["鮭","サケ","さけ","しゃけ","サーモン","秋鮭","銀鮭","塩鮭","焼き鮭"],type:"count",unit:"切れ",g:80,n:{p:17.5,kcal:150,c:0,f:8,ca:11,ve:1,iso:0},tag:["fish"]}, // ★
+{id:"ham",name:"ロースハム",alias:["ロースハム","ハム","はむ"],type:"count",unit:"50g",g:50,n:{p:8.5,kcal:110,c:1,f:7,ca:4,ve:.2,iso:0}}, // ★
 {id:"tuna",name:"ツナ缶",alias:["ツナ缶","ツナ","シーチキン"],type:"count",unit:"缶",g:70,n:{p:13,kcal:70,c:.1,f:2,ca:5,ve:.6,iso:0},tag:["fish"]},
-{id:"chickenbreast",name:"鶏むね",alias:["鶏むね","鶏胸","とりむね","むね肉","ムネ肉"],type:"weight",unit:"g",n:{p:23,kcal:108,c:0,f:2,ca:4,ve:.3,iso:0}},
-{id:"sasami",name:"ささみ",alias:["ささみ","ササミ","笹身"],type:"weight",unit:"g",n:{p:23,kcal:98,c:0,f:.8,ca:4,ve:.2,iso:0}},
-{id:"chickenthigh",name:"鶏もも",alias:["鶏もも","鳥もも","とりもも","もも肉","鶏肉","鳥肉","とり肉"],type:"weight",unit:"g",n:{p:19,kcal:113,c:0,f:5,ca:5,ve:.4,iso:0}},
+{id:"saladchicken",name:"サラダチキン",alias:["サラダチキン"],type:"count",unit:"個",g:110,n:{p:25,kcal:113,c:.5,f:1.5,ca:5,ve:.3,iso:0}},
 {id:"seseri",name:"せせり",alias:["せせり","セセリ"],type:"weight",unit:"g",n:{p:21,kcal:200,c:0,f:13,ca:5,ve:.3,iso:0}},
-{id:"pork",name:"豚こま",alias:["豚こま","豚コマ","豚肉","ぶたこま","豚","しゃぶしゃぶ"],type:"weight",unit:"g",n:{p:19,kcal:235,c:0,f:17,ca:4,ve:.3,iso:0}},
-{id:"beefmomo",name:"牛モモ",alias:["牛モモ","牛もも","牛赤身","牛肉","ランプ"],type:"weight",unit:"g",n:{p:21,kcal:130,c:.4,f:5,ca:4,ve:.5,iso:0}},
+{id:"beefmomo",name:"牛モモ",alias:["牛モモ","牛もも","牛もも肉","牛赤身","ランプ","牛ランプ"],type:"weight",unit:"g",n:{p:21,kcal:130,c:.4,f:5,ca:4,ve:.5,iso:0}},
 {id:"harami",name:"牛ハラミ",alias:["牛ハラミ","ハラミ","はらみ"],type:"weight",unit:"g",n:{p:20,kcal:250,c:.3,f:19,ca:4,ve:.6,iso:0}},
-{id:"liver",name:"牛レバー",alias:["牛レバー","レバー","肝"],type:"weight",unit:"g",n:{p:20,kcal:130,c:4,f:4,ca:5,ve:.4,iso:0}},
 {id:"tofu",name:"豆腐",alias:["豆腐","とうふ","冷奴","湯豆腐"],type:"count",unit:"150g",g:150,n:{p:10,kcal:100,c:3,f:6,ca:140,ve:.3,iso:40},tag:["soy"]},
 {id:"sausage",name:"ウインナー",alias:["ウインナー","ウィンナー","ソーセージ"],type:"count",unit:"本",g:20,n:{p:2.5,kcal:60,c:.6,f:5.5,ca:2,ve:.1,iso:0}},
 {id:"jerky",name:"ビーフジャーキー",alias:["ビーフジャーキー","ジャーキー"],type:"count",unit:"30g",g:30,n:{p:15,kcal:95,c:2,f:2,ca:6,ve:.2,iso:0}},
 {id:"cheese",name:"チーズ",alias:["チーズ","粉チーズ"],type:"count",unit:"20g",g:20,n:{p:4.5,kcal:68,c:.3,f:5,ca:130,ve:.2,iso:0},tag:["ferment"]},
-// 炭水化物
-{id:"soba",name:"そば",alias:["そば","蕎麦","ソバ","八割そば","十割そば","ざるそば"],type:"weight",unit:"g",n:{p:12,kcal:340,c:66,f:2.3,ca:18,ve:.2,iso:0}},
-{id:"pasta",name:"パスタ",alias:["パスタ","スパゲッティ","全粒粉パスタ"],type:"weight",unit:"g",n:{p:12.5,kcal:360,c:70,f:2,ca:18,ve:.3,iso:0}},
 {id:"udon",name:"うどん",alias:["うどん","ウドン"],type:"count",unit:"玉",g:230,n:{p:6,kcal:240,c:50,f:1,ca:14,ve:0,iso:0}},
 {id:"yakisoba",name:"焼きそば",alias:["焼きそば","やきそば"],type:"count",unit:"食",g:150,n:{p:7,kcal:220,c:38,f:4,ca:15,ve:.2,iso:0}},
 {id:"potato",name:"ジャガイモ",alias:["ジャガイモ","じゃがいも","ポテト"],type:"count",unit:"個",g:150,n:{p:3,kcal:120,c:26,f:.2,ca:5,ve:.1,iso:0}},
-{id:"sweetpotato",name:"さつまいも",alias:["さつまいも","サツマイモ"],type:"count",unit:"個",g:200,n:{p:2.4,kcal:270,c:64,f:.4,ca:72,ve:3,iso:0},tag:["greens"]},
+{id:"sweetpotato",name:"さつまいも",alias:["さつまいも","サツマイモ"],type:"count",unit:"個",g:200,n:{p:2.4,kcal:252,c:63.8,f:.4,ca:72,ve:3,iso:0}},
 {id:"bread",name:"食パン",alias:["食パン","パン","トースト"],type:"count",unit:"枚",g:60,n:{p:5.6,kcal:160,c:28,f:2.6,ca:17,ve:.3,iso:0}},
-// 野菜・果物
-{id:"broccoli",name:"ブロッコリー",alias:["ブロッコリー","冷凍ブロッコリー"],type:"weight",unit:"g",n:{p:4.3,kcal:37,c:5,f:.5,ca:38,ve:2.4,iso:0},tag:["greens"]},
-{id:"sprout",name:"ブロッコリースプラウト",alias:["ブロッコリースプラウト","スプラウト","かいわれ"],type:"count",unit:"パック",g:40,n:{p:1.3,kcal:8,c:.8,f:.2,ca:22,ve:.7,iso:0},tag:["greens"]},
-{id:"komatsuna",name:"小松菜",alias:["小松菜","こまつな","コマツナ"],type:"weight",unit:"g",n:{p:1.5,kcal:14,c:2.4,f:.2,ca:170,ve:.9,iso:0},tag:["greens"]},
-{id:"spinach",name:"ほうれん草",alias:["ほうれん草","ホウレンソウ","ほうれんそう"],type:"weight",unit:"g",n:{p:2.2,kcal:20,c:3.1,f:.4,ca:49,ve:2.1,iso:0},tag:["greens"]},
-{id:"tomato",name:"トマト",alias:["トマト","ミニトマト"],type:"count",unit:"個",g:150,n:{p:1,kcal:30,c:7,f:.2,ca:11,ve:1.4,iso:0},tag:["greens"]},
-{id:"tomatojuice",name:"トマトジュース",alias:["トマトジュース","トマト缶","トマトソース"],type:"count",unit:"200ml",g:200,n:{p:1.4,kcal:35,c:8,f:.2,ca:12,ve:1.6,iso:0},tag:["greens"]},
+{id:"tomato",name:"トマト",alias:["トマト"],type:"count",unit:"個",g:150,n:{p:1,kcal:30,c:7,f:.2,ca:11,ve:1.4,iso:0},tag:["greens"]},
+{id:"minitomato",name:"ミニトマト",alias:["ミニトマト","プチトマト"],type:"count",unit:"個",g:10,n:{p:.1,kcal:3,c:.7,f:0,ca:1,ve:.1,iso:0},tag:["greens"]},
 {id:"nasu",name:"ナス",alias:["ナス","なす","茄子"],type:"count",unit:"本",g:80,n:{p:.9,kcal:18,c:4,f:.1,ca:14,ve:.3,iso:0}},
-{id:"piman",name:"ピーマン",alias:["ピーマン","パプリカ"],type:"count",unit:"個",g:35,n:{p:.3,kcal:8,c:1.8,f:.1,ca:4,ve:.3,iso:0},tag:["greens"]},
-{id:"carrot",name:"にんじん",alias:["にんじん","ニンジン","人参"],type:"weight",unit:"g",n:{p:.7,kcal:37,c:9,f:.2,ca:28,ve:.5,iso:0},tag:["greens"]},
+{id:"piman",name:"ピーマン",alias:["ピーマン"],type:"count",unit:"個",g:35,n:{p:.3,kcal:8,c:1.8,f:.1,ca:4,ve:.3,iso:0},tag:["greens"]},
 {id:"cabbage",name:"キャベツ",alias:["キャベツ"],type:"weight",unit:"g",n:{p:1.3,kcal:23,c:5,f:.2,ca:43,ve:.1,iso:0}},
 {id:"salad",name:"サラダ",alias:["サラダ","野菜炒め","野菜"],type:"count",unit:"食",g:100,n:{p:2,kcal:45,c:6,f:1.5,ca:35,ve:.5,iso:0},tag:["greens"]},
-{id:"kimchi",name:"キムチ",alias:["キムチ","きむち"],type:"count",unit:"50g",g:50,n:{p:1,kcal:15,c:2.5,f:.1,ca:25,ve:.2,iso:0},tag:["ferment"]},
-{id:"mekabu",name:"めかぶ",alias:["めかぶ","メカブ","もずく"],type:"count",unit:"パック",g:40,n:{p:.5,kcal:12,c:1,f:.2,ca:30,ve:.1,iso:0}},
-{id:"wakame",name:"わかめ",alias:["わかめ","ワカメ","海藻"],type:"count",unit:"食",g:20,n:{p:.4,kcal:8,c:.8,f:.1,ca:26,ve:.1,iso:0}},
 {id:"kinoko",name:"きのこ",alias:["きのこ","キノコ","しめじ","舞茸","エリンギ","椎茸"],type:"weight",unit:"g",n:{p:2.7,kcal:18,c:3,f:.4,ca:2,ve:0,iso:0}},
 {id:"misoshiru",name:"味噌汁",alias:["味噌汁","みそ汁","みそしる","お吸い物","吸い物","スープ"],type:"count",unit:"杯",g:200,n:{p:2,kcal:45,c:5,f:1.2,ca:30,ve:.2,iso:6},tag:["ferment","soy"]},
-{id:"blueberry",name:"ブルーベリー",alias:["ブルーベリー"],type:"weight",unit:"g",n:{p:.5,kcal:49,c:12,f:.3,ca:8,ve:1.7,iso:0}},
-{id:"kiwi",name:"キウイ",alias:["キウイ","キュウイ","きうい","グリーンキウイ"],type:"count",unit:"個",g:100,n:{p:1,kcal:51,c:13,f:.2,ca:33,ve:1.3,iso:0}},
 {id:"banana",name:"バナナ",alias:["バナナ"],type:"count",unit:"本",g:100,n:{p:1.3,kcal:93,c:23,f:.2,ca:6,ve:.5,iso:0}},
-{id:"almond",name:"アーモンド",alias:["アーモンド","ナッツ","素焼きアーモンド"],type:"count",unit:"20g",g:20,n:{p:4,kcal:120,c:4,f:10.6,ca:52,ve:6,iso:0}},
 {id:"pumpkinseed",name:"かぼちゃの種",alias:["かぼちゃの種","カボチャの種"],type:"count",unit:"20g",g:20,n:{p:5,kcal:120,c:2,f:10,ca:8,ve:.2,iso:0}},
-// その他
 {id:"karaage",name:"唐揚げ",alias:["唐揚げ","からあげ","チキンカツ","フライドチキン"],type:"count",unit:"個",g:30,n:{p:5.4,kcal:86,c:3,f:5,ca:3,ve:.4,iso:0}},
 {id:"beer",name:"ビール",alias:["ビール","缶ビール"],type:"count",unit:"350ml",g:350,n:{p:0,kcal:140,c:11,f:0,ca:7,ve:0,iso:0}},
-{id:"creatine",name:"クレアチン",alias:["クレアチン"],type:"count",unit:"5g",g:5,n:{p:0,kcal:20,c:0,f:0,ca:0,ve:0,iso:0}},
+{id:"creatine",name:"クレアチン",alias:["クレアチン"],type:"count",unit:"5g",g:5,n:{p:0,kcal:0,c:0,f:0,ca:0,ve:0,iso:0}},
 ];
 
+/* 最初のリスト（承認済みの並び順）。設定画面で自由に変えられる */
+const DEFAULT_LISTS={
+  main:["sasami","chickenbreast","liver","porkloin","pork","beefkoma","chickenthigh","natto","egg","soymilk","soypro","soba","pasta","rice"],
+  beauty:["saba","sabacan","benizake","komatsuna","spinach","tomatocan","tomatojuice","almond","mikan","kiwi","iwashi","broccoli","redpaprika","carrot","kabocha","cocoa","greentea","avocado","blueberry","madai","oyster","mekabu","wakame","kimchi","yogurt","sprout"]
+};
+const LIST_META=[["main","たんぱく質・炭水化物"],["beauty","美容"]];
+const listLabel=k=>(LIST_META.find(x=>x[0]===k)||["",""])[1];
+
 const DEFAULTS={pMin:110,pTarget:130,pMax:150,kcalTarget:2600,isoLimit:75,caTarget:750,veTarget:6};
+const GOALS=[["pTarget","たんぱく質 目標 g"],["pMin","たんぱく質 最低 g"],["pMax","たんぱく質 上限 g"],
+  ["kcalTarget","カロリー 目標 kcal"],["isoLimit","イソフラボン 上限 mg"],["caTarget","カルシウム 目標 mg"],["veTarget","ビタミンE 目標 mg"]];
+const EXERCISES=["インクラインチェストプレス","ショルダープレス","サイドレイズ","ペックフライ","ラットプルダウン","チェストサポーテッドロー","インクラインダンベルカール","ロープープレスダウン","レッグカール","レッグプレス","リアレイズ","フェイスプル","ベンチプレス","懸垂"];
+const HINT_DEFAULT="食材と数をまとめて入力できます。数字だけなら卵・納豆は個数、肉・魚のgもそのまま。";
 
 /* ---------- 保存（localStorage） ---------- */
 const LS={
   get(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def}catch(e){return def}},
-  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 };
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const r3=x=>Math.round(x*1e3)/1e3;
+const fmt=x=>String(Math.round((Number(x)||0)*10)/10);
 
-/* 自分で追加した食材（localStorageに保存） */
-let USER_FOODS=LS.get("userFoods",[]);
-/* 組み込み＋自分の食材を合成。同じidは自分の食材で上書き */
+/* 全角英数・記号を半角に */
+const normalize=s=>String(s).replace(/[！-～]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+
+const BUILTIN_IDS=new Set(BUILTIN_FOODS.map(f=>f.id));
+const isBuiltin=id=>BUILTIN_IDS.has(id);
+
+let USER_FOODS=LS.get("userFoods",[]);      // 自分で作った食材（削除したものは deleted:true で残す＝過去の記録用）
+let OVERRIDES=LS.get("foodOverrides",{});   // 登録済み食材の値の修正 { id: {name,alias,n,tag} }
 let FOODS=[];
 function rebuildFoods(){
-  const map=new Map();
-  for(const f of BUILTIN_FOODS)map.set(f.id,f);
-  for(const f of USER_FOODS)map.set(f.id,f);
-  FOODS=[...map.values()];
+  const built=BUILTIN_FOODS.map(b=>{
+    const o=OVERRIDES[b.id];
+    if(!o)return b;
+    return Object.assign({},b,{name:o.name||b.name,alias:o.alias||b.alias,
+      n:Object.assign({},b.n,o.n||{}),tag:o.tag||b.tag||[],edited:true});
+  });
+  FOODS=USER_FOODS.concat(built);            // 同じ呼び名なら自分の食材を優先
+  FOODS.forEach(f=>{f._al=(f.alias&&f.alias.length?f.alias:[f.name]).map(normalize)});
 }
 rebuildFoods();
-const QUICK=["egg","natto","rice","salmon","saba","soypro","soymilk","kimchi","broccoli","komatsuna","yogurt","tofu","pork","chickenthigh","misoshiru","tomato","almond","creatine"];
-const EXERCISES=["インクラインチェストプレス","ショルダープレス","サイドレイズ","ペックフライ","ラットプルダウン","チェストサポーテッドロー","インクラインダンベルカール","ロープープレスダウン","レッグカール","レッグプレス","リアレイズ","フェイスプル","ベンチプレス","懸垂"];
+const foodById=id=>FOODS.find(f=>f.id===id);
+const activeFoods=()=>FOODS.filter(f=>!f.deleted);
+
+function loadLists(){
+  const v=LS.get("lists",null);
+  if(!v||!Array.isArray(v.main)||!Array.isArray(v.beauty))return clone(DEFAULT_LISTS);
+  return {main:v.main.slice(),beauty:v.beauty.slice()};
+}
+let LISTS=loadLists();
+const saveLists=()=>LS.set("lists",LISTS);
+function cleanLists(){
+  let changed=false;
+  LIST_META.forEach(([k])=>{
+    const seen=new Set();
+    const next=LISTS[k].filter(id=>{const f=foodById(id);
+      if(!f||f.deleted||seen.has(id))return false;seen.add(id);return true;});
+    if(next.length!==LISTS[k].length){LISTS[k]=next;changed=true;}
+  });
+  if(changed)saveLists();
+}
+cleanLists();
 
 const todayKey=(d=new Date())=>{
   const z=new Date(d.getTime()-d.getTimezoneOffset()*6e4);return z.toISOString().slice(0,10)};
@@ -331,36 +380,69 @@ let date=todayKey();
 let settings=Object.assign({},DEFAULTS,LS.get("settings",{}));
 let day=LS.get("log:"+date,{meals:[],workouts:[]});
 let tab="food";
-
 const saveDay=()=>LS.set("log:"+date,day);
-const foodById=id=>FOODS.find(f=>f.id===id);
 
 /* ---------- 入力解析 ---------- */
-const normalize=s=>s.replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xfee0))
-  .replace(/[，、]/g," ").replace(/\u3000/g," ");
+const UNIT_RE=/(グラム|g|ミリ|ml|切れ|切|合|パック|杯|本|缶|玉|枚|食|個|つ|粒|丁)/;
+const GRAM_UNITS=["g","グラム","ml","ミリ"];
+const LONE_NUM=/^[0-9.\/半分]+(グラム|g|ミリ|ml|切れ|切|合|パック|杯|本|缶|玉|枚|食|個|つ|粒|丁)?$/;
 
+function matchFood(raw){
+  let best=null;
+  for(const f of FOODS){
+    if(f.deleted)continue;
+    for(const a of f._al){
+      if(!a)continue;
+      const i=raw.indexOf(a);
+      if(i<0)continue;
+      // 長い呼び名を優先。同じ長さなら前にあるほう（牛もも肉 → 牛もも）
+      if(!best||a.length>best.a.length||(a.length===best.a.length&&i<best.i))best={f,a,i};
+    }
+  }
+  return best;
+}
+function readNum(rest){
+  let num=null;
+  const fr=rest.match(/([0-9]+)\/([0-9]+)/);
+  if(fr&&+fr[2]>0)num=+fr[1]/+fr[2];
+  else{const m=rest.match(/([0-9]+(?:\.[0-9]+)?)/);if(m)num=parseFloat(m[1]);}
+  if(/半/.test(rest))num=(num===null?0:num)+.5;     // 「半分」「1合半」
+  return num;
+}
+function calcQty(f,num,unit){
+  if(num===null)return 1;                              // 数字なし →「1人前」
+  const isGram=!!unit&&GRAM_UNITS.indexOf(unit)>=0;
+  const isOther=!!unit&&!isGram;
+  if(f.type==="weight"){
+    if(isOther)return f.pieceG?num*f.pieceG/100:num;   // ささみ3本・3切れ
+    if(!isGram&&num<1)return num;                      // 「半分」は100gの半分
+    return num/100;                                    // 数字はグラム
+  }
+  if(isGram)return f.g?num/f.g:num;                    // 鮭160g → 2切れ
+  if(isOther)return num;                               // ビール2杯・卵3個
+  if(/^[0-9]+(g|ml)$/.test(f.unit)&&f.g)               // 豆乳・ヨーグルト・キムチなど
+    return num>=Math.min(10,f.g)?num/f.g:num;          // 豆乳200→200ml、ビール2→2本
+  if(f.g&&num>=20)return num/f.g;                      // ご飯200 → 200g
+  return num;
+}
 function parseInput(text){
-  const chunks=normalize(text).split(/[\s\n,]+/).filter(Boolean);
-  const hits=[],misses=[];
+  const chunks=normalize(text).split(/[\s,、・()\[\]「」【】]+/).filter(Boolean);
+  const hits=[],misses=[];let waiting=null;
   for(const raw of chunks){
-    let matched=null,len=0,alias="";
-    for(const f of FOODS)for(const a of f.alias)
-      if(raw.includes(a)&&a.length>len){matched=f;len=a.length;alias=a}
-    if(!matched){if(!/^[0-9.]+$/.test(raw))misses.push(raw);continue}
-    const rest=raw.replace(alias,"");
-    const nm=rest.match(/([0-9]+(?:\.[0-9]+)?)/);
-    const num=nm?parseFloat(nm[1]):1;
-    const um=rest.match(/(g|グラム|ｇ|ml|ミリ|個|切れ|切|合|パック|杯|本|缶|玉|枚|食|つ)/);
-    const unit=um?um[1]:null;
-    const isGram=["g","グラム","ｇ","ml","ミリ"].includes(unit);
-    // 単位名が「100ml」「50g」等の重量系 count 食材は、素の数字も重量として扱う
-    const gramUnitFood=/^[0-9]+(g|ml)$/.test(matched.unit);
-    let qty;
-    if(!nm)qty=1;                                    // 数字なし →「1人前」
-    else if(matched.type==="weight")qty=num/100;     // 数字はグラム
-    else if((isGram||gramUnitFood)&&matched.g)qty=num/matched.g;  // g指定→個数換算
-    else qty=num;                                    // 個数（1切れ/1杯なども num そのまま）
-    hits.push({foodId:matched.id,qty:Math.round(qty*1e3)/1e3});
+    const m=matchFood(raw);
+    if(!m){
+      if(LONE_NUM.test(raw)){                           // 「鶏もも 200g」の 200g
+        if(waiting){const um=raw.match(UNIT_RE);
+          waiting.hit.qty=r3(calcQty(waiting.f,readNum(raw),um?um[1]:null));waiting=null;}
+        continue;
+      }
+      misses.push(raw);waiting=null;continue;
+    }
+    const rest=raw.slice(0,m.i)+raw.slice(m.i+m.a.length);
+    const num=readNum(rest),um=rest.match(UNIT_RE);
+    const hit={foodId:m.f.id,qty:r3(calcQty(m.f,num,um?um[1]:null))};
+    hits.push(hit);
+    waiting=num===null?{f:m.f,hit}:null;
   }
   return{hits,misses};
 }
@@ -376,7 +458,16 @@ function qtyLabel(f,q){
   if(f.type==="weight")return Math.round(q*100)+"g";
   const m=f.unit.match(/^([0-9]+)(g|ml)$/);
   if(m)return Math.round(q*Number(m[1]))+m[2];      // 豆乳200ml / キムチ50g など
-  return (Math.round(q*10)/10)+f.unit;
+  const r=Math.round(q*10)/10;
+  if(/^(大さじ|小さじ)$/.test(f.unit))return f.unit+r;
+  return r+f.unit;
+}
+function perLabel(f){
+  if(f.type==="weight")return "100gあたり";
+  if(/^[0-9]+(g|ml)$/.test(f.unit))return f.unit+"あたり";
+  const g=f.g?`（${f.g}g）`:"";
+  if(/^(大さじ|小さじ)$/.test(f.unit))return f.unit+"1"+g+"あたり";
+  return "1"+f.unit+g+"あたり";
 }
 
 /* ---------- 描画 ---------- */
@@ -385,11 +476,23 @@ const $=id=>document.getElementById(id);
 function render(){
   $("dateLabel").textContent=dateLabelOf(date);
   $("nextDay").style.opacity=date>=todayKey()?.25:1;
-  tab==="food"?($("foodPane").classList.remove("hidden"),$("gymPane").classList.add("hidden"))
-              :($("foodPane").classList.add("hidden"),$("gymPane").classList.remove("hidden"));
-  $("tabFood").className="tab"+(tab==="food"?" on":"");
-  $("tabGym").className="tab"+(tab==="gym"?" on":"");
-  tab==="food"?renderFood():renderGym();
+  [["food","foodPane","tabFood"],["gym","gymPane","tabGym"],["set","setPane","tabSet"]].forEach(([k,p,t])=>{
+    $(p).classList.toggle("hidden",tab!==k);
+    $(t).className="tab"+(tab===k?" on":"");
+  });
+  if(tab==="food")renderFood();else if(tab==="gym")renderGym();else renderSettings();
+}
+
+function renderChips(){
+  let h="";
+  LIST_META.forEach(([key,label])=>{
+    const fs=LISTS[key].map(foodById).filter(f=>f&&!f.deleted);
+    if(!fs.length)return;
+    h+=`<div class="chiphead">${label}</div><div class="chips">`+
+      fs.map(f=>`<button class="chip" data-add="${esc(f.id)}">${esc(f.name)}${f.type==="weight"?" 100g":""}</button>`).join("")+
+      `</div>`;
+  });
+  $("chips").innerHTML=h||'<div class="hint">リストが空です。設定から食材を足せます。</div>';
 }
 
 function renderFood(){
@@ -408,13 +511,14 @@ function renderFood(){
   }).join("");
 
   // 提案
-  if(remain>0&&day.meals.length>0){
+  const sug=["egg","salmon","sasami","natto"].map(foodById).filter(f=>f&&f.n.p>0);
+  if(remain>0&&day.meals.length>0&&sug.length){
     $("sugBox").classList.remove("hidden");
     $("sugTitle").textContent=`あと ${Math.round(remain)}g を満たすなら`;
-    $("sugItems").innerHTML=["egg","salmon","sasami","natto"].map(id=>{
-      const f=foodById(id),need=remain/f.n.p;
-      const txt=f.type==="weight"?Math.round(need*100/10)*10+"g":(Math.ceil(need*10)/10)+f.unit;
-      return `<span>${f.name} ${txt}</span>`;}).join("");
+    $("sugItems").innerHTML=sug.map(f=>{
+      const need=remain/f.n.p;
+      const txt=f.type==="weight"?Math.round(need*100/10)*10+"g":qtyLabel(f,Math.ceil(need*10)/10);
+      return `<span>${esc(f.name)} ${txt}</span>`;}).join("");
   }else $("sugBox").classList.add("hidden");
 
   // イソフラボン警告
@@ -439,12 +543,14 @@ function renderFood(){
   $("chkFish").className="chk"+(tags.has("fish")?" ok":"");
   $("chkFerment").className="chk"+(tags.has("ferment")?" ok":"");
 
+  renderChips();
+
   $("mealList").innerHTML=day.meals.length===0?'<div class="empty">まだ記録がありません</div>':
     day.meals.map((m,i)=>{const f=foodById(m.foodId);if(!f)return"";
-      return `<div class="item"><div class="itemL"><span class="itemname">${f.name}</span>
+      return `<div class="item"><div class="itemL"><span class="itemname">${esc(f.name)}</span>
         <span class="itemsub num">${qtyLabel(f,m.qty)}　${Math.round(f.n.kcal*m.qty)}kcal</span></div>
         <div class="itemR"><span class="itemnum num">${Math.round(f.n.p*m.qty*10)/10}g</span>
-        <button class="del" data-del="${i}">×</button></div></div>`;}).join("");
+        <button class="del" data-del="${i}" aria-label="${esc(f.name)}を消す">×</button></div></div>`;}).join("");
   document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
     day.meals.splice(+b.dataset.del,1);saveDay();render();});
 }
@@ -456,7 +562,7 @@ function renderGym(){
   for(let i=1;i<=14&&!last;i++){
     const d=new Date(date);d.setDate(d.getDate()-i);
     const v=LS.get("log:"+todayKey(d),null);
-    if(v&&v.workouts)for(const w of v.workouts)if(w.ex===ex&&!last)last={...w,date:todayKey(d)};
+    if(v&&v.workouts)for(const w of v.workouts)if(w.ex===ex&&!last)last=Object.assign({},w,{date:todayKey(d)});
   }
   if(last){$("lastRec").classList.remove("hidden");
     $("lastRec").textContent=`前回 ${last.date.slice(5)}　${last.kg}kg × ${last.reps}回`;}
@@ -464,34 +570,290 @@ function renderGym(){
 
   $("setCount").textContent=`今日のセット（${day.workouts.length}）`;
   if(day.workouts.length===0){$("workoutList").innerHTML='<div class="empty">まだ記録がありません</div>';return}
-  const g={};day.workouts.forEach((w,i)=>{(g[w.ex]=g[w.ex]||[]).push({...w,i})});
+  const g={};day.workouts.forEach((w,i)=>{(g[w.ex]=g[w.ex]||[]).push(Object.assign({},w,{i}))});
   $("workoutList").innerHTML=Object.entries(g).map(([name,sets])=>
-    `<div style="margin-bottom:18px"><div style="font-size:14px;font-weight:600;margin-bottom:4px">${name}</div>`+
+    `<div style="margin-bottom:18px"><div style="font-size:14px;font-weight:600;margin-bottom:4px">${esc(name)}</div>`+
     sets.map((s,n)=>`<div class="item"><span class="itemsub num">${n+1}セット目</span>
       <div class="itemR"><span class="itemnum num">${s.kg}kg × ${s.reps}回</span>
-      <button class="del" data-wdel="${s.i}">×</button></div></div>`).join("")+"</div>").join("");
+      <button class="del" data-wdel="${s.i}" aria-label="このセットを消す">×</button></div></div>`).join("")+"</div>").join("");
   document.querySelectorAll("[data-wdel]").forEach(b=>b.onclick=()=>{
     day.workouts.splice(+b.dataset.wdel,1);saveDay();render();});
 }
 
-/* ---------- 初期化 ---------- */
-$("chips").innerHTML=QUICK.map(id=>{const f=foodById(id);
-  return `<button class="chip" data-add="${id}">${f.name}${f.type==="weight"?" 100g":""}</button>`}).join("");
-document.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{
-  addFood(b.dataset.add,1)});
+/* ---------- 設定画面 ---------- */
+let openEd=null;        // {list,idx}=そのリストの行を編集中 / "create"=新しい食材 / null
+let notices={};         // リストごとのお知らせ {text, undo}
+let createMsg="",setMsg="";
+const clearMsgs=()=>{notices={};createMsg="";setMsg="";};
 
+function rowHTML(key,i,f,isLast){
+  return `<div class="item srow" data-row="${key}:${i}">
+    <button class="sname" data-edit="${key}:${i}">
+      <span class="itemname">${esc(f.name)}</span>
+      <span class="itemsub num">${perLabel(f)}　たんぱく質${fmt(f.n.p)}g${f.edited?"　修正済み":""}</span>
+    </button>
+    <div class="itemR">
+      <button class="mv" data-mv="${key}:${i}:-1" aria-label="${esc(f.name)}を上へ"${i===0?" disabled":""}>↑</button>
+      <button class="mv" data-mv="${key}:${i}:1" aria-label="${esc(f.name)}を下へ"${isLast?" disabled":""}>↓</button>
+      <button class="del" data-rm="${key}:${i}" aria-label="${esc(f.name)}をリストから外す">×</button>
+    </div>
+  </div>`;
+}
+
+function numField(key,label,val,ph,wide){
+  return `<div${wide?' class="span2"':""}><label>${label}</label><input type="number" inputmode="decimal" step="any" data-f="${key}" value="${val===null||val===undefined?"":esc(val)}" placeholder="${ph}"></div>`;
+}
+function editorHTML(f,mode){
+  const create=mode==="create";
+  const n=f?f.n:{};
+  const tags=new Set(f&&f.tag?f.tag:[]);
+  const tagBox=(k,l)=>`<label><input type="checkbox" data-tag="${k}"${tags.has(k)?" checked":""}> ${l}</label>`;
+  let h=`<div class="editor" id="editor"><div class="setgrid">
+    <div class="span2"><label>名前</label><input data-f="name" value="${f?esc(f.name):""}" placeholder="例：ホッケ"></div>
+    <div class="span2"><label>呼び名（カンマ区切り・入力欄で使う）</label><input data-f="alias" value="${f?esc((f.alias||[]).join(",")):""}" placeholder="例：ほっけ,ホッケ"></div>`;
+  if(create){
+    h+=`<div class="span2"><label>数え方</label><select data-f="type">
+        <option value="weight">グラムで数える（肉・魚・野菜）</option>
+        <option value="count">個数で数える（卵・パックなど）</option></select></div>
+      <div class="hidden" data-countonly><label>単位（個・切れ・杯など）</label><input data-f="unit" placeholder="切れ"></div>
+      <div class="hidden" data-countonly><label>1単位のグラム</label><input type="number" inputmode="decimal" step="any" data-f="g" placeholder="80"></div>`;
+  }
+  h+=`</div><div class="hint" data-basis style="margin:12px 0 0">↓ ${create?"100gあたり":perLabel(f)}の数値</div>
+    <div class="setgrid">
+      ${numField("p","たんぱく質 g",create?null:n.p,"17")}
+      ${numField("kcal","カロリー kcal",create?null:n.kcal,"110")}
+      ${numField("c","炭水化物 g",create?null:n.c,"0")}
+      ${numField("f","脂質 g",create?null:n.f,"0")}
+      ${numField("ca","カルシウム mg",create?null:n.ca,"0")}
+      ${numField("ve","ビタミンE mg",create?null:n.ve,"0")}
+      ${numField("iso","イソフラボン mg（大豆製品のみ）",create?null:n.iso,"0",true)}
+      <div class="span2"><label>種類</label><div class="tagrow">${tagBox("fish","魚")}${tagBox("greens","緑黄色野菜")}${tagBox("ferment","発酵食品")}${tagBox("soy","大豆")}</div></div>`;
+  if(create)h+=`<div class="span2"><label>入れるリスト</label><select data-f="list">
+      <option value="main">たんぱく質・炭水化物</option><option value="beauty">美容</option>
+      <option value="">リストには入れない（入力欄だけで使う）</option></select></div>`;
+  h+=`</div><div class="edbtns"><button class="addbtn" data-act="save">${create?"食材を作る":"保存"}</button>
+    <button class="ghost" data-act="cancel">やめる</button>`;
+  if(!create&&isBuiltin(f.id)&&f.edited)h+=`<button class="ghost" data-act="reset">元の値に戻す</button>`;
+  if(!create&&!isBuiltin(f.id))h+=`<button class="ghost danger" data-act="delete">この食材を削除</button>`;
+  h+=`</div>`;
+  if(!create)h+=`<div class="hint">直した値は、過去の記録にも反映されます。</div>`;
+  h+=`<div class="hint errmsg" data-f="msg"></div></div>`;
+  return h;
+}
+
+function renderSettings(){
+  cleanLists();
+  let h="";
+  LIST_META.forEach(([key,label],li)=>{
+    const ids=LISTS[key];
+    h+=`<div class="sec"${li===0?' style="margin-top:0"':""}><div class="sectitle">${label}のリスト（${ids.length}）</div>`;
+    if(li===0)h+=`<div class="hint" style="margin:-4px 0 12px">名前をタップすると、たんぱく質などの値を直せます。↑↓で並べ替え、×でリストから外します。</div>`;
+    const nt=notices[key];
+    if(nt)h+=`<div class="notice"><span>${esc(nt.text)}</span>${nt.undo?`<button data-undo="${key}">元に戻す</button>`:""}</div>`;
+    h+=`<div class="rows">`;
+    if(!ids.length)h+=`<div class="empty">リストが空です</div>`;
+    ids.forEach((id,i)=>{
+      const f=foodById(id);
+      h+=rowHTML(key,i,f,i===ids.length-1);
+      if(openEd&&openEd.list===key&&openEd.idx===i)h+=editorHTML(f,"edit");
+    });
+    h+=`</div>`;
+    const addable=activeFoods().filter(f=>ids.indexOf(f.id)<0);
+    const mine=addable.filter(f=>!isBuiltin(f.id)),built=addable.filter(f=>isBuiltin(f.id));
+    const opt=f=>`<option value="${esc(f.id)}">${esc(f.name)}</option>`;
+    h+=`<select class="wsel addsel" data-addto="${key}" aria-label="${label}のリストに食材を足す">
+      <option value="">＋ このリストに食材を足す</option>
+      ${mine.length?`<optgroup label="自分で作った食材">${mine.map(opt).join("")}</optgroup>`:""}
+      <optgroup label="登録済みの食材">${built.map(opt).join("")}</optgroup>
+    </select></div>`;
+  });
+
+  h+=`<div class="sec"><div class="sectitle">新しい食材</div>`;
+  if(createMsg)h+=`<div class="notice"><span>${esc(createMsg)}</span></div>`;
+  h+=openEd==="create"?editorHTML(null,"create"):
+    `<button class="ghost" data-act="create" style="width:100%">新しい食材を作る</button>
+     <div class="hint">栄養値がわからない食材は、Claudeに「◯◯の栄養は?」と聞いて入れてください。</div>`;
+  h+=`</div>`;
+
+  h+=`<div class="sec"><div class="sectitle">目標</div><div class="setgrid" style="margin-top:0">`+
+    GOALS.map(([k,l])=>`<div><label>${l}</label><input type="number" inputmode="decimal" data-set="${k}" value="${settings[k]}"></div>`).join("")+
+    `</div></div>`;
+
+  h+=`<div class="sec">${setMsg?`<div class="notice"><span>${esc(setMsg)}</span></div>`:""}
+    <button class="link" data-act="resetLists">リストを最初の並びに戻す</button></div>`;
+  $("setPane").innerHTML=h;
+}
+
+const rowEl=(k,i)=>document.querySelector(`[data-row="${k}:${i}"]`);
+function flashRow(k,i){const el=rowEl(k,i);if(el)el.classList.add("flash");}
+
+function moveItem(k,i,dir){
+  const L=LISTS[k],j=i+dir;
+  if(j<0||j>=L.length)return;
+  clearMsgs();
+  const before=rowEl(k,i)?rowEl(k,i).getBoundingClientRect().top:null;
+  const tmp=L[i];L[i]=L[j];L[j]=tmp;
+  if(openEd&&openEd.list===k){if(openEd.idx===i)openEd.idx=j;else if(openEd.idx===j)openEd.idx=i;}
+  saveLists();renderSettings();
+  const el=rowEl(k,j);
+  if(el&&before!==null)window.scrollBy(0,el.getBoundingClientRect().top-before); // 動かした行を指の下に保つ
+  flashRow(k,j);
+}
+function removeItem(k,i){
+  const id=LISTS[k][i],f=foodById(id);
+  clearMsgs();
+  LISTS[k].splice(i,1);
+  if(openEd&&openEd.list===k){if(openEd.idx===i)openEd=null;else if(openEd.idx>i)openEd.idx--;}
+  saveLists();
+  notices[k]={text:`「${f?f.name:""}」をリストから外しました`,undo:{i,id}};
+  renderSettings();
+}
+function undoRemove(k){
+  const n=notices[k];if(!n||!n.undo)return;
+  const u=n.undo,pos=Math.min(u.i,LISTS[k].length);
+  clearMsgs();
+  if(LISTS[k].indexOf(u.id)<0)LISTS[k].splice(pos,0,u.id);
+  saveLists();renderSettings();flashRow(k,pos);
+}
+
+function readEditor(root,create){
+  const q=k=>root.querySelector(`[data-f="${k}"]`);
+  const num=k=>{const v=q(k).value.trim();if(v==="")return null;const x=Number(v);return isFinite(x)&&x>=0?x:NaN;};
+  const name=q("name").value.trim();
+  if(!name)return{err:"名前を入れてください"};
+  const p=num("p"),kcal=num("kcal");
+  if(p===null||kcal===null||isNaN(p)||isNaN(kcal))return{err:"たんぱく質とカロリーは必須です（0以上の数字）"};
+  const n={p,kcal};
+  for(const k of ["c","f","ca","ve","iso"]){const v=num(k);if(isNaN(v))return{err:"数字を入れてください"};n[k]=v===null?0:v;}
+  const aliasRaw=q("alias").value.trim();
+  const alias=aliasRaw?aliasRaw.split(/[,、，]/).map(s=>s.trim()).filter(Boolean):[];
+  if(alias.indexOf(name)<0)alias.unshift(name);
+  const tag=Array.from(root.querySelectorAll("[data-tag]")).filter(c=>c.checked).map(c=>c.dataset.tag);
+  const out={name,alias,n,tag};
+  if(create){
+    out.type=q("type").value;
+    if(out.type==="count"){
+      out.unit=q("unit").value.trim()||"個";
+      const g=num("g");if(isNaN(g))return{err:"1単位のグラムは数字で入れてください"};
+      if(g)out.g=g;
+    }else out.unit="g";
+    out.list=q("list").value;
+  }
+  return out;
+}
+function sameAsBase(b,r){
+  if(b.name!==r.name||b.alias.join("|")!==r.alias.join("|"))return false;
+  for(const k of ["p","kcal","c","f","ca","ve","iso"])if(Number(b.n[k]||0)!==Number(r.n[k]||0))return false;
+  return (b.tag||[]).slice().sort().join()===r.tag.slice().sort().join();
+}
+function saveEditor(){
+  const root=$("editor");if(!root)return;
+  const create=openEd==="create";
+  const r=readEditor(root,create);
+  if(r.err){root.querySelector('[data-f="msg"]').textContent=r.err;return;}
+  clearMsgs();
+  if(create){
+    const food={id:"u_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+      name:r.name,alias:r.alias,type:r.type,unit:r.unit,n:r.n};
+    if(r.g)food.g=r.g;
+    if(r.tag.length)food.tag=r.tag;
+    USER_FOODS.push(food);LS.set("userFoods",USER_FOODS);rebuildFoods();
+    if(r.list){LISTS[r.list].push(food.id);saveLists();}
+    openEd=null;
+    createMsg=`「${r.name}」を作りました。`+(r.list?`${listLabel(r.list)}のリストの一番下に入っています。`:"入力欄で使えます。");
+    renderSettings();
+    if(r.list)flashRow(r.list,LISTS[r.list].length-1);
+    return;
+  }
+  const k=openEd.list,i=openEd.idx,f=foodById(LISTS[k][i]);
+  if(isBuiltin(f.id)){
+    const base=BUILTIN_FOODS.find(b=>b.id===f.id);
+    if(sameAsBase(base,r))delete OVERRIDES[f.id];
+    else OVERRIDES[f.id]={name:r.name,alias:r.alias,n:r.n,tag:r.tag};
+    LS.set("foodOverrides",OVERRIDES);
+  }else{
+    const u=USER_FOODS.find(x=>x.id===f.id);
+    u.name=r.name;u.alias=r.alias;u.n=r.n;
+    if(r.tag.length)u.tag=r.tag;else delete u.tag;
+    LS.set("userFoods",USER_FOODS);
+  }
+  rebuildFoods();openEd=null;
+  notices[k]={text:`「${r.name}」を保存しました`};
+  renderSettings();flashRow(k,i);
+}
+function resetFood(){
+  const k=openEd.list,i=openEd.idx,f=foodById(LISTS[k][i]);
+  clearMsgs();
+  delete OVERRIDES[f.id];LS.set("foodOverrides",OVERRIDES);rebuildFoods();
+  openEd=null;
+  notices[k]={text:`「${foodById(f.id).name}」を元の値に戻しました`};
+  renderSettings();flashRow(k,i);
+}
+function deleteFood(){
+  const k=openEd.list,f=foodById(LISTS[k][openEd.idx]);
+  if(!confirm(`「${f.name}」を削除しますか？\n過去の記録の数字は残ります。`))return;
+  clearMsgs();
+  const u=USER_FOODS.find(x=>x.id===f.id);u.deleted=true;
+  LS.set("userFoods",USER_FOODS);rebuildFoods();
+  LIST_META.forEach(([key])=>{LISTS[key]=LISTS[key].filter(id=>id!==f.id);});
+  saveLists();openEd=null;
+  notices[k]={text:`「${f.name}」を削除しました`};
+  renderSettings();
+}
+
+$("setPane").addEventListener("click",e=>{
+  const b=e.target.closest("button");
+  if(!b||!$("setPane").contains(b))return;
+  const d=b.dataset;
+  if(d.mv){const p=d.mv.split(":");moveItem(p[0],+p[1],+p[2]);return;}
+  if(d.rm){const p=d.rm.split(":");removeItem(p[0],+p[1]);return;}
+  if(d.undo){undoRemove(d.undo);return;}
+  if(d.edit){
+    const p=d.edit.split(":"),k=p[0],i=+p[1];
+    const same=openEd&&openEd.list===k&&openEd.idx===i;
+    clearMsgs();openEd=same?null:{list:k,idx:i};renderSettings();
+    const ed=$("editor");
+    if(ed&&ed.getBoundingClientRect().bottom>window.innerHeight)ed.scrollIntoView({block:"nearest"});
+    return;
+  }
+  switch(d.act){
+    case "create":clearMsgs();openEd="create";renderSettings();break;
+    case "cancel":openEd=null;renderSettings();break;
+    case "save":saveEditor();break;
+    case "reset":resetFood();break;
+    case "delete":deleteFood();break;
+    case "resetLists":
+      if(!confirm("リストを最初の並びに戻しますか？\n作った食材や値の修正は消えません。"))return;
+      clearMsgs();openEd=null;LISTS=clone(DEFAULT_LISTS);cleanLists();saveLists();
+      setMsg="リストを最初の並びに戻しました";renderSettings();break;
+  }
+});
+$("setPane").addEventListener("change",e=>{
+  const s=e.target,d=s.dataset;
+  if(d.addto!==undefined){
+    const k=d.addto,id=s.value;if(!id)return;
+    clearMsgs();
+    if(LISTS[k].indexOf(id)<0)LISTS[k].push(id);
+    saveLists();renderSettings();flashRow(k,LISTS[k].length-1);
+    return;
+  }
+  if(d.set){settings[d.set]=Number(s.value)||0;LS.set("settings",settings);return;}
+  if(d.f==="type"){
+    const root=$("editor"),count=s.value==="count";
+    root.querySelectorAll("[data-countonly]").forEach(x=>x.classList.toggle("hidden",!count));
+    root.querySelector("[data-basis]").textContent="↓ "+(count?"1単位あたり":"100gあたり")+"の数値";
+  }
+});
+
+/* ---------- 初期化 ---------- */
+$("hintText").textContent=HINT_DEFAULT;
+$("chips").addEventListener("click",e=>{const b=e.target.closest("[data-add]");if(b)addFood(b.dataset.add,1);});
 $("exSel").innerHTML=EXERCISES.map(e=>`<option>${e}</option>`).join("");
 $("exSel").onchange=renderGym;
 
-$("setGrid").innerHTML=[["pTarget","たんぱく質 目標g"],["pMin","たんぱく質 最低g"],["pMax","たんぱく質 上限g"],
-  ["kcalTarget","カロリー目標"],["isoLimit","イソフラボン上限mg"],["caTarget","カルシウムmg"]]
-  .map(([k,l])=>`<div><label>${l}</label><input type="number" inputmode="numeric" data-set="${k}" value="${settings[k]}"></div>`).join("");
-document.querySelectorAll("[data-set]").forEach(inp=>inp.onchange=()=>{
-  settings[inp.dataset.set]=Number(inp.value)||0;LS.set("settings",settings);render();});
-
 function addFood(id,qty){
   const i=day.meals.findIndex(m=>m.foodId===id);
-  if(i>=0)day.meals[i].qty=Math.round((day.meals[i].qty+qty)*1e3)/1e3;
+  if(i>=0)day.meals[i].qty=r3(day.meals[i].qty+qty);
   else day.meals.push({foodId:id,qty});
   saveDay();render();
 }
@@ -502,11 +864,10 @@ $("addBtn").onclick=()=>{
   if(!hits.length){$("hintText").textContent="わからない食材: "+misses.join(" ");return}
   hits.forEach(h=>{
     const i=day.meals.findIndex(m=>m.foodId===h.foodId);
-    if(i>=0)day.meals[i].qty=Math.round((day.meals[i].qty+h.qty)*1e3)/1e3;
+    if(i>=0)day.meals[i].qty=r3(day.meals[i].qty+h.qty);
     else day.meals.push(h);});
   saveDay();$("foodInput").value="";
-  $("hintText").textContent=misses.length?"登録できない食材: "+misses.join(" "):
-    "食材と数をまとめて入力できます。数字だけなら卵・納豆は個数、肉・魚のgもそのまま。";
+  $("hintText").textContent=misses.length?"登録できない食材: "+misses.join(" "):HINT_DEFAULT;
   render();
 };
 $("foodInput").onkeydown=e=>{if(e.key==="Enter")$("addBtn").click()};
@@ -524,88 +885,11 @@ $("prevDay").onclick=()=>{const d=new Date(date);d.setDate(d.getDate()-1);
 $("nextDay").onclick=()=>{if(date>=todayKey())return;
   const d=new Date(date);d.setDate(d.getDate()+1);
   date=todayKey(d);day=LS.get("log:"+date,{meals:[],workouts:[]});render()};
-$("tabFood").onclick=()=>{tab="food";render()};
-$("tabGym").onclick=()=>{tab="gym";render()};
-$("setToggle").onclick=()=>$("setGrid").classList.toggle("hidden");
-
-/* ---------- 食材の追加・管理 ---------- */
-$("foodMgrToggle").onclick=()=>$("foodMgr").classList.toggle("hidden");
-
-// 数え方に応じて入力欄を出し分け
-function syncFoodForm(){
-  const t=$("nf_type").value;
-  if(t==="count"){
-    $("nf_unitwrap").classList.remove("hidden");
-    $("nf_gwrap").classList.remove("hidden");
-    $("nf_basis").textContent="↓ 1単位（1個・1パックなど）あたりの数値を入力";
-  }else{
-    $("nf_unitwrap").classList.add("hidden");
-    $("nf_gwrap").classList.add("hidden");
-    $("nf_basis").textContent="↓ 100gあたりの数値を入力";
-  }
-}
-$("nf_type").onchange=syncFoodForm;
-syncFoodForm();
-
-function slugify(name){
-  return "u_"+name.replace(/\s/g,"")+"_"+Date.now().toString(36);
-}
-
-$("nf_save").onclick=()=>{
-  const name=$("nf_name").value.trim();
-  if(!name){$("nf_msg").textContent="名前を入れてください";return}
-  const p=parseFloat($("nf_p").value);
-  const kcal=parseFloat($("nf_kcal").value);
-  if(isNaN(p)||isNaN(kcal)){$("nf_msg").textContent="たんぱく質とカロリーは必須です";return}
-  const type=$("nf_type").value;
-  const num=v=>{const x=parseFloat($(v).value);return isNaN(x)?0:x};
-  const tag=[];
-  if($("nf_fish").checked)tag.push("fish");
-  if($("nf_greens").checked)tag.push("greens");
-  if($("nf_ferment").checked)tag.push("ferment");
-  if($("nf_soy").checked)tag.push("soy");
-
-  const aliasRaw=$("nf_alias").value.trim();
-  const alias=aliasRaw?aliasRaw.split(/[,、]/).map(s=>s.trim()).filter(Boolean):[name];
-  if(!alias.includes(name))alias.unshift(name);
-
-  const food={
-    id:slugify(name),name,alias,type,
-    unit:type==="count"?($("nf_unit").value.trim()||"個"):"g",
-    n:{p,kcal,c:num("nf_c"),f:num("nf_f"),ca:num("nf_ca"),ve:num("nf_ve"),iso:num("nf_iso")},
-  };
-  if(type==="count"){const g=parseFloat($("nf_g").value);if(!isNaN(g)&&g>0)food.g=g;}
-  if(tag.length)food.tag=tag;
-
-  USER_FOODS.push(food);
-  LS.set("userFoods",USER_FOODS);
-  rebuildFoods();
-  // フォームを空に
-  ["nf_name","nf_alias","nf_unit","nf_g","nf_p","nf_kcal","nf_c","nf_f","nf_ca","nf_ve","nf_iso"].forEach(i=>$(i).value="");
-  ["nf_fish","nf_greens","nf_ferment","nf_soy"].forEach(i=>$(i).checked=false);
-  $("nf_msg").textContent=`「${name}」を追加しました。入力欄やボタンから使えます。`;
-  renderUserFoods();
-  render();
-};
-
-function renderUserFoods(){
-  if(USER_FOODS.length===0){$("userFoodList").innerHTML="";return}
-  $("userFoodList").innerHTML='<div class="sectitle" style="margin-bottom:6px">追加した食材</div>'+
-    USER_FOODS.map((f,i)=>{
-      const per=f.type==="weight"?"100gあたり":`1${f.unit}あたり`;
-      return `<div class="item"><div class="itemL"><span class="itemname">${f.name}</span>
-        <span class="itemsub num">${per} P${f.n.p}g / ${f.n.kcal}kcal</span></div>
-        <div class="itemR"><button class="del" data-ufdel="${i}">×</button></div></div>`;
-    }).join("");
-  document.querySelectorAll("[data-ufdel]").forEach(b=>b.onclick=()=>{
-    const f=USER_FOODS[+b.dataset.ufdel];
-    USER_FOODS.splice(+b.dataset.ufdel,1);
-    LS.set("userFoods",USER_FOODS);
-    rebuildFoods();renderUserFoods();render();
-    $("nf_msg").textContent=`「${f.name}」を削除しました`;
-  });
-}
-renderUserFoods();
+function setTab(t){tab=t;clearMsgs();openEd=null;render();}
+$("tabFood").onclick=()=>setTab("food");
+$("tabGym").onclick=()=>setTab("gym");
+$("tabSet").onclick=()=>setTab("set");
+$("toSettings").onclick=()=>{setTab("set");window.scrollTo(0,0);};
 
 render();
 </script>
