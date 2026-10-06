@@ -44,7 +44,10 @@ body{
 .row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line)}
 .rows{border-top:1px solid var(--line)}
 .rowname{font-size:14px;color:var(--muted)}
-.rowval{font-size:16px;font-weight:600}
+.rowval{font-size:16px;font-weight:600;white-space:nowrap}
+.rowsub{font-size:11px;margin-left:6px;opacity:.8}
+.plantlist{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+.plantlist:empty{display:none}
 .bar{height:2px;background:var(--line);border-radius:1px;margin-top:6px;overflow:hidden}
 .barf{height:100%;transition:width .35s}
 .checks{display:flex;gap:8px;padding:14px 0}
@@ -154,6 +157,8 @@ body{
     </div>
 
     <div id="isoWarn" class="warn hidden"></div>
+    <div id="saltWarn" class="warn hidden"></div>
+    <div id="cafWarn" class="warn hidden"></div>
 
     <div class="sec">
       <div class="rows">
@@ -168,6 +173,25 @@ body{
             <span class="rowname">イソフラボン</span><span class="rowval num" id="isoVal"></span>
           </div>
           <div class="bar"><div class="barf" id="isoBar" style="width:0"></div></div>
+        </div>
+        <div style="padding:11px 0;border-bottom:1px solid var(--line)">
+          <div style="display:flex;justify-content:space-between">
+            <span class="rowname">食物繊維</span><span class="rowval num" id="fibVal"></span>
+          </div>
+          <div class="bar"><div class="barf" id="fibBar" style="width:0"></div></div>
+        </div>
+        <div style="padding:11px 0;border-bottom:1px solid var(--line)">
+          <div style="display:flex;justify-content:space-between;gap:8px">
+            <span class="rowname">食塩<span class="rowsub">調味料は入力した分だけ</span></span><span class="rowval num" id="saltVal"></span>
+          </div>
+          <div class="bar"><div class="barf" id="saltBar" style="width:0"></div></div>
+        </div>
+        <div style="padding:11px 0;border-bottom:1px solid var(--line)">
+          <div style="display:flex;justify-content:space-between">
+            <span class="rowname">今週の植物</span><span class="rowval num" id="plantVal"></span>
+          </div>
+          <div class="bar"><div class="barf" id="plantBar" style="width:0"></div></div>
+          <div class="plantlist" id="plantList"></div>
         </div>
         <div class="row"><span class="rowname">炭水化物</span><span class="rowval num" id="cVal"></span></div>
         <div class="row"><span class="rowname">脂質</span><span class="rowval num" id="fVal"></span></div>
@@ -225,97 +249,124 @@ body{
    type 'count'  … 個・切れ・合などで数える。n は「1単位あたり」。g は1単位のグラム
    type 'weight' … グラムで数える。n は「100gあたり」。pieceG は「1本」「1切れ」と書いたときのグラム
    n: p=たんぱく質g kcal c=炭水化物g f=脂質g ca=カルシウムmg ve=ビタミンE(α-トコフェロール)mg iso=イソフラボンmg
-   tag: fish=魚 / greens=緑黄色野菜 / ferment=発酵食品 / soy=大豆
+      fib=食物繊維g salt=食塩相当量g（味付けは「食べきる分」は含む。麺の汁は含まない）
+   tag: fish=魚 / greens=緑黄色野菜 / ferment=発酵食品 / soy=大豆 / plant=植物（週30種のカウント対象）
+   pk = 同じ植物としてまとめるキー（納豆・豆腐・豆乳＝大豆、トマト缶・トマトジュース＝トマト）
+        精製した穀物（白米・パスタ・パン・うどん）、油、お茶・コーヒー、ココアは植物に数えない
    ★ = 裕人の確定値（たんぱく質）。それ以外は日本食品標準成分表（八訂）を基にした値
 =========================================== */
 const BUILTIN_FOODS=[
 // ---- たんぱく質・炭水化物リスト ----
-{id:"sasami",name:"鶏ささみ",alias:["鶏ささみ","鳥ささみ","ささみ","ササミ","笹身"],type:"weight",unit:"g",pieceG:50,n:{p:23.9,kcal:98,c:.1,f:.8,ca:4,ve:.7,iso:0}},
-{id:"chickenbreast",name:"鶏むね（皮なし）",alias:["鶏むね","鳥むね","鶏胸","とりむね","むね肉","ムネ肉","胸肉"],type:"weight",unit:"g",n:{p:23.3,kcal:105,c:.1,f:1.9,ca:4,ve:.3,iso:0}},
-{id:"liver",name:"牛レバー",alias:["牛レバー","レバー"],type:"weight",unit:"g",n:{p:19.6,kcal:119,c:3.7,f:3.7,ca:5,ve:.3,iso:0}},
-{id:"porkloin",name:"豚ロース",alias:["豚ロース","ぶたロース","ロース肉","ロース"],type:"weight",unit:"g",n:{p:19.3,kcal:248,c:.2,f:19.2,ca:4,ve:.3,iso:0}},
-{id:"pork",name:"豚こま",alias:["豚こま","豚コマ","豚小間","豚切り落とし","豚肉","ぶたこま","豚","しゃぶしゃぶ"],type:"weight",unit:"g",n:{p:18.5,kcal:201,c:.2,f:14.6,ca:4,ve:.3,iso:0}},
-{id:"beefkoma",name:"牛こま",alias:["牛こま","牛コマ","牛小間","牛切り落とし","牛肉"],type:"weight",unit:"g",n:{p:17.1,kcal:231,c:.3,f:19.8,ca:4,ve:.5,iso:0}},
-{id:"chickenthigh",name:"鶏もも（皮つき）",alias:["鶏もも","鳥もも","とりもも","もも肉","鶏肉","鳥肉","とり肉"],type:"weight",unit:"g",n:{p:16.6,kcal:190,c:0,f:14.2,ca:5,ve:.7,iso:0}},
-{id:"natto",name:"納豆",alias:["納豆","なっとう","ナットウ"],type:"count",unit:"パック",g:45,n:{p:7.4,kcal:86,c:5.4,f:4.5,ca:41,ve:.2,iso:36},tag:["ferment","soy"]}, // ★
-{id:"egg",name:"卵",alias:["卵","たまご","タマゴ","玉子","ゆで卵","目玉焼き","卵焼き","温泉卵"],type:"count",unit:"個",g:57,n:{p:7,kcal:81,c:.2,f:5.8,ca:26,ve:.7,iso:0}}, // ★
-{id:"soymilk",name:"豆乳",alias:["豆乳","とうにゅう","無調整豆乳"],type:"count",unit:"100ml",g:100,n:{p:5,kcal:50,c:3,f:2,ca:15,ve:.1,iso:22},tag:["soy"]}, // ★
-{id:"soypro",name:"ソイプロテイン",alias:["ソイプロテイン","ソイプロ","プロテイン","そいぷろ"],type:"count",unit:"杯",g:20,n:{p:16.4,kcal:80,c:1.5,f:.8,ca:40,ve:0,iso:40},tag:["soy"]}, // ★ カロリー等は推定
-{id:"soba",name:"そば（乾麺）",alias:["そば","蕎麦","ソバ","八割そば","十割そば","ざるそば"],type:"weight",unit:"g",n:{p:14,kcal:344,c:72.4,f:2.3,ca:24,ve:.3,iso:0}},
-{id:"pasta",name:"パスタ（乾）",alias:["パスタ","スパゲッティ","スパゲティ","全粒粉パスタ","マカロニ"],type:"weight",unit:"g",n:{p:12.9,kcal:347,c:73.1,f:1.8,ca:18,ve:.3,iso:0}},
-{id:"rice",name:"ご飯",alias:["ご飯","白米","ごはん","米","飯","ライス"],type:"count",unit:"合",g:330,n:{p:8,kcal:515,c:122,f:1,ca:10,ve:0,iso:0}}, // ★
+{id:"sasami",name:"鶏ささみ",alias:["鶏ささみ","鳥ささみ","ささみ","ササミ","笹身"],type:"weight",unit:"g",pieceG:50,n:{p:23.9,kcal:98,c:.1,f:.8,ca:4,ve:.7,iso:0,fib:0,salt:.1}},
+{id:"chickenbreast",name:"鶏むね（皮なし）",alias:["鶏むね","鳥むね","鶏胸","とりむね","むね肉","ムネ肉","胸肉"],type:"weight",unit:"g",n:{p:23.3,kcal:105,c:.1,f:1.9,ca:4,ve:.3,iso:0,fib:0,salt:.1}},
+{id:"liver",name:"牛レバー",alias:["牛レバー","レバー"],type:"weight",unit:"g",n:{p:19.6,kcal:119,c:3.7,f:3.7,ca:5,ve:.3,iso:0,fib:0,salt:.1}},
+{id:"porkloin",name:"豚ロース",alias:["豚ロース","ぶたロース","ロース肉","ロース"],type:"weight",unit:"g",n:{p:19.3,kcal:248,c:.2,f:19.2,ca:4,ve:.3,iso:0,fib:0,salt:.1}},
+{id:"pork",name:"豚こま",alias:["豚こま","豚コマ","豚小間","豚切り落とし","豚肉","ぶたこま","豚","しゃぶしゃぶ"],type:"weight",unit:"g",n:{p:18.5,kcal:201,c:.2,f:14.6,ca:4,ve:.3,iso:0,fib:0,salt:.1}},
+{id:"beefkoma",name:"牛こま",alias:["牛こま","牛コマ","牛小間","牛切り落とし","牛肉"],type:"weight",unit:"g",n:{p:17.1,kcal:231,c:.3,f:19.8,ca:4,ve:.5,iso:0,fib:0,salt:.1}},
+{id:"chickenthigh",name:"鶏もも（皮つき）",alias:["鶏もも","鳥もも","とりもも","もも肉","鶏肉","鳥肉","とり肉"],type:"weight",unit:"g",n:{p:16.6,kcal:190,c:0,f:14.2,ca:5,ve:.7,iso:0,fib:0,salt:.2}},
+{id:"natto",name:"納豆",alias:["納豆","なっとう","ナットウ"],type:"count",unit:"パック",g:45,n:{p:7.4,kcal:86,c:5.4,f:4.5,ca:41,ve:.2,iso:36,fib:4.3,salt:.5},pk:"soy",tag:["plant","ferment","soy"]}, // ★
+{id:"egg",name:"卵",alias:["卵","たまご","タマゴ","玉子","ゆで卵","目玉焼き","卵焼き","温泉卵"],type:"count",unit:"個",g:57,n:{p:7,kcal:81,c:.2,f:5.8,ca:26,ve:.7,iso:0,fib:0,salt:.2}}, // ★
+{id:"soymilk",name:"豆乳",alias:["豆乳","とうにゅう","無調整豆乳"],type:"count",unit:"100ml",g:100,n:{p:5,kcal:50,c:3,f:2,ca:15,ve:.1,iso:22,fib:.2,salt:0},pk:"soy",tag:["plant","soy"]}, // ★
+{id:"soypro",name:"ソイプロテイン",alias:["ソイプロテイン","ソイプロ","プロテイン","そいぷろ"],type:"count",unit:"杯",g:20,n:{p:16.4,kcal:80,c:1.5,f:.8,ca:40,ve:0,iso:40,fib:0,salt:.2},tag:["soy"]}, // ★ カロリー等は推定
+{id:"soba",name:"そば（乾麺）",alias:["そば","蕎麦","ソバ","八割そば","十割そば","ざるそば"],type:"weight",unit:"g",n:{p:14,kcal:344,c:72.4,f:2.3,ca:24,ve:.3,iso:0,fib:3.7,salt:.3},tag:["plant"]},
+{id:"pasta",name:"パスタ（乾）",alias:["パスタ","スパゲッティ","スパゲティ","全粒粉パスタ","マカロニ"],type:"weight",unit:"g",n:{p:12.9,kcal:347,c:73.1,f:1.8,ca:18,ve:.3,iso:0,fib:5.4,salt:0}},
+{id:"rice",name:"ご飯",alias:["ご飯","白米","ごはん","米","飯","ライス"],type:"count",unit:"合",g:330,n:{p:8,kcal:515,c:122,f:1,ca:10,ve:0,iso:0,fib:5,salt:0}}, // ★
 
 // ---- 美容リスト ----
-{id:"saba",name:"鯖",alias:["鯖","サバ","さば"],type:"count",unit:"切れ",g:90,n:{p:18,kcal:190,c:.3,f:15.1,ca:5,ve:1.2,iso:0},tag:["fish"]}, // ★
-{id:"sabacan",name:"鯖缶",alias:["鯖缶","サバ缶","さば缶","鯖水煮","サバ水煮","さば水煮"],type:"count",unit:"缶",g:150,n:{p:31.4,kcal:261,c:.3,f:16.1,ca:390,ve:4.8,iso:0},tag:["fish"]},
-{id:"benizake",name:"紅鮭",alias:["紅鮭","べにざけ","ベニザケ","紅しゃけ","紅サケ"],type:"count",unit:"切れ",g:80,n:{p:18,kcal:102,c:.1,f:3.6,ca:8,ve:1,iso:0},tag:["fish"]},
-{id:"komatsuna",name:"小松菜",alias:["小松菜","こまつな","コマツナ"],type:"weight",unit:"g",n:{p:1.5,kcal:13,c:2.4,f:.2,ca:170,ve:.9,iso:0},tag:["greens"]},
-{id:"spinach",name:"ほうれん草",alias:["ほうれん草","ホウレンソウ","ほうれんそう","冷凍ほうれん草"],type:"weight",unit:"g",n:{p:2.9,kcal:22,c:3.4,f:.3,ca:100,ve:2.6,iso:0},tag:["greens"]},
-{id:"tomatocan",name:"トマト缶",alias:["トマト缶","ホールトマト","カットトマト","トマト水煮","トマトソース"],type:"weight",unit:"g",n:{p:.9,kcal:21,c:4.4,f:.2,ca:9,ve:1.2,iso:0},tag:["greens"]},
-{id:"tomatojuice",name:"トマトジュース",alias:["トマトジュース"],type:"count",unit:"200ml",g:200,n:{p:1.4,kcal:31,c:8.2,f:.2,ca:12,ve:1.4,iso:0},tag:["greens"]},
-{id:"almond",name:"アーモンド",alias:["アーモンド","素焼きアーモンド","ナッツ","あーもんど"],type:"count",unit:"20g",g:20,n:{p:4.1,kcal:122,c:4.1,f:10.8,ca:52,ve:5.8,iso:0}},
-{id:"mikan",name:"みかん",alias:["みかん","ミカン","蜜柑","温州みかん"],type:"count",unit:"個",g:75,n:{p:.5,kcal:37,c:9,f:.1,ca:16,ve:.3,iso:0}},
-{id:"kiwi",name:"キウイ",alias:["キウイ","キュウイ","きうい","グリーンキウイ"],type:"count",unit:"個",g:85,n:{p:.9,kcal:43,c:11.4,f:.2,ca:22,ve:1.1,iso:0}},
-{id:"iwashi",name:"イワシ缶",alias:["イワシ缶","いわし缶","鰯缶","イワシ","いわし","鰯"],type:"count",unit:"缶",g:150,n:{p:31.1,kcal:252,c:.2,f:15.9,ca:480,ve:4.2,iso:0},tag:["fish"]},
-{id:"broccoli",name:"ブロッコリー",alias:["ブロッコリー","ぶろっこりー","冷凍ブロッコリー"],type:"weight",unit:"g",n:{p:3.9,kcal:30,c:4.3,f:.4,ca:41,ve:2.7,iso:0},tag:["greens"]},
-{id:"redpaprika",name:"赤パプリカ",alias:["赤パプリカ","パプリカ","赤ピーマン"],type:"count",unit:"個",g:130,n:{p:1.3,kcal:36,c:9.4,f:.3,ca:9,ve:5.6,iso:0},tag:["greens"]},
-{id:"carrot",name:"にんじん",alias:["にんじん","ニンジン","人参"],type:"weight",unit:"g",n:{p:.7,kcal:30,c:8.7,f:.1,ca:26,ve:.4,iso:0},tag:["greens"]},
-{id:"kabocha",name:"かぼちゃ",alias:["かぼちゃ","カボチャ","南瓜","冷凍かぼちゃ"],type:"weight",unit:"g",n:{p:2.2,kcal:75,c:18.5,f:.3,ca:25,ve:4.2,iso:0},tag:["greens"]},
-{id:"cocoa",name:"純ココア",alias:["純ココア","ココア","ピュアココア"],type:"count",unit:"大さじ",g:6,n:{p:1.1,kcal:23,c:2.5,f:1.3,ca:8,ve:0,iso:0}},
-{id:"greentea",name:"緑茶",alias:["緑茶","お茶","せん茶","煎茶"],type:"count",unit:"杯",g:150,n:{p:.3,kcal:3,c:.3,f:0,ca:5,ve:0,iso:0}},
-{id:"avocado",name:"アボカド",alias:["アボカド","アボガド"],type:"count",unit:"個",g:140,n:{p:2.9,kcal:246,c:11.1,f:24.5,ca:11,ve:4.6,iso:0}},
-{id:"blueberry",name:"ブルーベリー",alias:["ブルーベリー","ぶるーべりー","冷凍ブルーベリー"],type:"weight",unit:"g",n:{p:.5,kcal:48,c:12.9,f:.1,ca:8,ve:1.7,iso:0}},
-{id:"madai",name:"真鯛",alias:["真鯛","鯛","マダイ","まだい"],type:"count",unit:"切れ",g:80,n:{p:16.7,kcal:128,c:.1,f:7.5,ca:10,ve:1.9,iso:0},tag:["fish"]},
-{id:"oyster",name:"牡蠣",alias:["牡蠣","牡蛎","カキ","生牡蠣"],type:"count",unit:"個",g:18,n:{p:1.2,kcal:10,c:.9,f:.4,ca:15,ve:.2,iso:0},tag:["fish"]},
-{id:"mekabu",name:"めかぶ",alias:["めかぶ","メカブ","もずく"],type:"count",unit:"パック",g:40,n:{p:.4,kcal:6,c:1.4,f:.2,ca:31,ve:0,iso:0}},
-{id:"wakame",name:"わかめ",alias:["わかめ","ワカメ","海藻"],type:"count",unit:"食",g:20,n:{p:.4,kcal:8,c:.8,f:.1,ca:26,ve:.1,iso:0}},
-{id:"kimchi",name:"キムチ",alias:["キムチ","きむち"],type:"count",unit:"50g",g:50,n:{p:1.2,kcal:14,c:2.7,f:.1,ca:25,ve:.3,iso:0},tag:["ferment"]},
-{id:"yogurt",name:"ヨーグルト",alias:["ヨーグルト","ギリシャヨーグルト","よーぐると"],type:"count",unit:"200g",g:200,n:{p:6,kcal:120,c:10,f:6,ca:240,ve:.2,iso:0},tag:["ferment"]}, // ★
-{id:"sprout",name:"ブロッコリースプラウト",alias:["ブロッコリースプラウト","ブロッコリースーパースプラウト","スーパースプラウト","スプラウト","かいわれ"],type:"count",unit:"パック",g:40,n:{p:.8,kcal:7,c:1,f:.2,ca:23,ve:.8,iso:0},tag:["greens"]},
+{id:"saba",name:"鯖",alias:["鯖","サバ","さば"],type:"count",unit:"切れ",g:90,n:{p:18,kcal:190,c:.3,f:15.1,ca:5,ve:1.2,iso:0,fib:0,salt:.3},tag:["fish"]}, // ★
+{id:"sabacan",name:"鯖缶",alias:["鯖缶","サバ缶","さば缶","鯖水煮","サバ水煮","さば水煮"],type:"count",unit:"缶",g:150,n:{p:31.4,kcal:261,c:.3,f:16.1,ca:390,ve:4.8,iso:0,fib:0,salt:1.4},tag:["fish"]},
+{id:"benizake",name:"紅鮭",alias:["紅鮭","べにざけ","ベニザケ","紅しゃけ","紅サケ"],type:"count",unit:"切れ",g:80,n:{p:18,kcal:102,c:.1,f:3.6,ca:8,ve:1,iso:0,fib:0,salt:.1},tag:["fish"]},
+{id:"komatsuna",name:"小松菜",alias:["小松菜","こまつな","コマツナ"],type:"weight",unit:"g",n:{p:1.5,kcal:13,c:2.4,f:.2,ca:170,ve:.9,iso:0,fib:1.9,salt:0},tag:["plant","greens"]},
+{id:"spinach",name:"ほうれん草",alias:["ほうれん草","ホウレンソウ","ほうれんそう","冷凍ほうれん草"],type:"weight",unit:"g",n:{p:2.9,kcal:22,c:3.4,f:.3,ca:100,ve:2.6,iso:0,fib:3.3,salt:.3},tag:["plant","greens"]},
+{id:"tomatocan",name:"トマト缶",alias:["トマト缶","ホールトマト","カットトマト","トマト水煮","トマトソース"],type:"weight",unit:"g",n:{p:.9,kcal:21,c:4.4,f:.2,ca:9,ve:1.2,iso:0,fib:1.3,salt:0},pk:"tomato",tag:["plant","greens"]},
+{id:"tomatojuice",name:"トマトジュース",alias:["トマトジュース"],type:"count",unit:"200ml",g:200,n:{p:1.4,kcal:31,c:8.2,f:.2,ca:12,ve:1.4,iso:0,fib:1.4,salt:0},pk:"tomato",tag:["plant","greens"]},
+{id:"almond",name:"アーモンド",alias:["アーモンド","素焼きアーモンド","ナッツ","あーもんど"],type:"count",unit:"20g",g:20,n:{p:4.1,kcal:122,c:4.1,f:10.8,ca:52,ve:5.8,iso:0,fib:2.2,salt:0},tag:["plant"]},
+{id:"mikan",name:"みかん",alias:["みかん","ミカン","蜜柑","温州みかん"],type:"count",unit:"個",g:75,n:{p:.5,kcal:37,c:9,f:.1,ca:16,ve:.3,iso:0,fib:.8,salt:0},tag:["plant"]},
+{id:"kiwi",name:"キウイ",alias:["キウイ","キュウイ","きうい","グリーンキウイ"],type:"count",unit:"個",g:85,n:{p:.9,kcal:43,c:11.4,f:.2,ca:22,ve:1.1,iso:0,fib:2.2,salt:0},tag:["plant"]},
+{id:"iwashi",name:"イワシ缶",alias:["イワシ缶","いわし缶","鰯缶","イワシ","いわし","鰯"],type:"count",unit:"缶",g:150,n:{p:31.1,kcal:252,c:.2,f:15.9,ca:480,ve:4.2,iso:0,fib:0,salt:1.2},tag:["fish"]},
+{id:"broccoli",name:"ブロッコリー",alias:["ブロッコリー","ぶろっこりー","冷凍ブロッコリー"],type:"weight",unit:"g",n:{p:3.9,kcal:30,c:4.3,f:.4,ca:41,ve:2.7,iso:0,fib:4.3,salt:0},tag:["plant","greens"]},
+{id:"redpaprika",name:"赤パプリカ",alias:["赤パプリカ","パプリカ","赤ピーマン"],type:"count",unit:"個",g:130,n:{p:1.3,kcal:36,c:9.4,f:.3,ca:9,ve:5.6,iso:0,fib:2.1,salt:0},tag:["plant","greens"]},
+{id:"carrot",name:"にんじん",alias:["にんじん","ニンジン","人参"],type:"weight",unit:"g",n:{p:.7,kcal:30,c:8.7,f:.1,ca:26,ve:.4,iso:0,fib:2.4,salt:.1},tag:["plant","greens"]},
+{id:"kabocha",name:"かぼちゃ",alias:["かぼちゃ","カボチャ","南瓜","冷凍かぼちゃ"],type:"weight",unit:"g",n:{p:2.2,kcal:75,c:18.5,f:.3,ca:25,ve:4.2,iso:0,fib:4.2,salt:0},tag:["plant","greens"]},
+{id:"cocoa",name:"純ココア",alias:["純ココア","ココア","ピュアココア"],type:"count",unit:"大さじ",g:6,n:{p:1.1,kcal:23,c:2.5,f:1.3,ca:8,ve:0,iso:0,fib:1.4,salt:0}},
+{id:"greentea",name:"緑茶",alias:["緑茶","お茶","せん茶","煎茶"],type:"count",unit:"杯",g:150,n:{p:.3,kcal:3,c:.3,f:0,ca:5,ve:0,iso:0,fib:0,salt:0}},
+{id:"avocado",name:"アボカド",alias:["アボカド","アボガド"],type:"count",unit:"個",g:140,n:{p:2.9,kcal:246,c:11.1,f:24.5,ca:11,ve:4.6,iso:0,fib:7.8,salt:0},tag:["plant"]},
+{id:"blueberry",name:"ブルーベリー",alias:["ブルーベリー","ぶるーべりー","冷凍ブルーベリー"],type:"weight",unit:"g",n:{p:.5,kcal:48,c:12.9,f:.1,ca:8,ve:1.7,iso:0,fib:3.3,salt:0},tag:["plant"]},
+{id:"madai",name:"真鯛",alias:["真鯛","鯛","マダイ","まだい"],type:"count",unit:"切れ",g:80,n:{p:16.7,kcal:128,c:.1,f:7.5,ca:10,ve:1.9,iso:0,fib:0,salt:.1},tag:["fish"]},
+{id:"oyster",name:"牡蠣",alias:["牡蠣","牡蛎","カキ","生牡蠣"],type:"count",unit:"個",g:18,n:{p:1.2,kcal:10,c:.9,f:.4,ca:15,ve:.2,iso:0,fib:0,salt:.2},tag:["fish"]},
+{id:"mekabu",name:"めかぶ",alias:["めかぶ","メカブ","もずく"],type:"count",unit:"パック",g:40,n:{p:.4,kcal:6,c:1.4,f:.2,ca:31,ve:0,iso:0,fib:1.4,salt:.2},tag:["plant"]},
+{id:"wakame",name:"わかめ",alias:["わかめ","ワカメ","海藻"],type:"count",unit:"食",g:20,n:{p:.4,kcal:8,c:.8,f:.1,ca:26,ve:.1,iso:0,fib:.8,salt:.2},tag:["plant"]},
+{id:"kimchi",name:"キムチ",alias:["キムチ","きむち"],type:"count",unit:"50g",g:50,n:{p:1.2,kcal:14,c:2.7,f:.1,ca:25,ve:.3,iso:0,fib:1.1,salt:1.5},tag:["plant","ferment"]},
+{id:"yogurt",name:"ヨーグルト",alias:["ヨーグルト","ギリシャヨーグルト","よーぐると"],type:"count",unit:"200g",g:200,n:{p:6,kcal:120,c:10,f:6,ca:240,ve:.2,iso:0,fib:0,salt:.2},tag:["ferment"]}, // ★
+{id:"sprout",name:"ブロッコリースプラウト",alias:["ブロッコリースプラウト","ブロッコリースーパースプラウト","スーパースプラウト","スプラウト","かいわれ"],type:"count",unit:"パック",g:40,n:{p:.8,kcal:7,c:1,f:.2,ca:23,ve:.8,iso:0,fib:.8,salt:0},tag:["plant","greens"]},
+
+// ---- 健康リスト（v4で追加。鮭・ヨーグルト・キャベツ・海藻・キムチ・きのこ・牡蠣・ブルーベリー・スプラウト・かぼちゃの種は既存のもの） ----
+{id:"mugi",name:"もち麦ごはん",alias:["もち麦ごはん","もち麦ご飯","もち麦","押麦ごはん","押し麦","押麦","麦ごはん","麦ご飯","麦飯"],type:"weight",unit:"g",pieceG:150,n:{p:2.2,kcal:118,c:28.5,f:.5,ca:6,ve:0,iso:0,fib:4.2,salt:0},tag:["plant"]}, // 炊いた後の重さ。1杯150g
+{id:"oliveoil",name:"オリーブオイル",alias:["オリーブオイル","オリーブ油","EXVオリーブオイル","エクストラバージンオリーブオイル","エキストラバージンオリーブオイル","オリーブ"],type:"count",unit:"大さじ",g:12,n:{p:0,kcal:107,c:0,f:12,ca:0,ve:.9,iso:0,fib:0,salt:0}},
+{id:"onion",name:"玉ねぎ",alias:["玉ねぎ","たまねぎ","タマネギ","玉葱","新玉ねぎ","オニオン"],type:"weight",unit:"g",pieceG:200,n:{p:1,kcal:33,c:8.4,f:.1,ca:17,ve:.1,iso:0,fib:1.5,salt:0},tag:["plant"]},
+{id:"walnut",name:"くるみ",alias:["くるみ","クルミ","胡桃","ウォールナッツ"],type:"count",unit:"20g",g:20,n:{p:2.9,kcal:143,c:2.3,f:13.8,ca:17,ve:.2,iso:0,fib:1.5,salt:0},tag:["plant"]},
+{id:"coffee",name:"コーヒー",alias:["コーヒー","珈琲","ブラックコーヒー","アイスコーヒー","ホットコーヒー"],type:"count",unit:"杯",g:150,n:{p:.3,kcal:6,c:1.1,f:0,ca:3,ve:0,iso:0,fib:0,salt:0}}, // 1日3杯まで
+{id:"oatmeal",name:"オートミール",alias:["オートミール","オートミル","オーツ麦","オーツ"],type:"count",unit:"30g",g:30,n:{p:4.1,kcal:105,c:20.7,f:1.7,ca:14,ve:.2,iso:0,fib:2.8,salt:0},tag:["plant"]},
+{id:"garlic",name:"ニンニク",alias:["ニンニク","にんにく","大蒜","ガーリック"],type:"count",unit:"片",g:5,n:{p:.3,kcal:6,c:1.4,f:0,ca:1,ve:0,iso:0,fib:.3,salt:0},tag:["plant"]},
+{id:"gobou",name:"ごぼう",alias:["ごぼう","ゴボウ","牛蒡"],type:"weight",unit:"g",n:{p:1.5,kcal:50,c:13.7,f:.2,ca:48,ve:.6,iso:0,fib:6.1,salt:0},tag:["plant"]},
+{id:"nagaimo",name:"長芋",alias:["長芋","長いも","ながいも","ナガイモ","山芋","やまいも","とろろ"],type:"weight",unit:"g",n:{p:2.2,kcal:64,c:13.9,f:.3,ca:17,ve:.2,iso:0,fib:1,salt:0},tag:["plant"]},
+{id:"shijimi",name:"しじみ汁",alias:["しじみ汁","しじみの味噌汁","しじみのみそ汁","しじみ","シジミ","蜆"],type:"count",unit:"杯",g:200,n:{p:3.1,kcal:53,c:5.7,f:1.4,ca:66,ve:.5,iso:6,fib:1,salt:1.6},pk:"soy",tag:["plant","ferment","soy"]}, // 味噌汁1杯＋しじみの身15g
+{id:"edamame",name:"えだまめ",alias:["えだまめ","枝豆","エダマメ","冷凍えだまめ","冷凍枝豆"],type:"count",unit:"皿",g:50,n:{p:6.5,kcal:72,c:5.3,f:3.8,ca:38,ve:.5,iso:10,fib:3.7,salt:0},pk:"soy",tag:["plant","soy"]}, // 豆だけで50g（さやつき約100g）
+
+// ---- 調味料（食塩を数えるため。リストには入れない） ----
+{id:"shoyu",name:"醤油",alias:["醤油","しょうゆ","しょう油","ショウユ"],type:"count",unit:"小さじ",g:6,n:{p:.5,kcal:4,c:.5,f:0,ca:2,ve:0,iso:0,fib:0,salt:.9}},
+{id:"shio",name:"塩",alias:["塩","食塩","しお"],type:"count",unit:"1g",g:1,n:{p:0,kcal:0,c:0,f:0,ca:0,ve:0,iso:0,fib:0,salt:1}}, // ひとつまみ≒1g
+{id:"ponzu",name:"ポン酢",alias:["ポン酢","ぽん酢","ポンズ"],type:"count",unit:"大さじ",g:15,n:{p:.6,kcal:8,c:1.2,f:0,ca:3,ve:0,iso:0,fib:0,salt:1.2}},
+{id:"tare",name:"焼肉のタレ",alias:["焼肉のタレ","焼肉のたれ","焼き肉のたれ","焼き肉のタレ","タレ"],type:"count",unit:"大さじ",g:18,n:{p:.5,kcal:30,c:5.9,f:.4,ca:3,ve:0,iso:0,fib:0,salt:1.5}},
+{id:"dressing",name:"ドレッシング",alias:["ドレッシング"],type:"count",unit:"大さじ",g:15,n:{p:.2,kcal:50,c:1.2,f:5,ca:1,ve:.6,iso:0,fib:0,salt:.5}},
+{id:"mayo",name:"マヨネーズ",alias:["マヨネーズ","マヨ"],type:"count",unit:"大さじ",g:12,n:{p:.2,kcal:80,c:.3,f:9,ca:1,ve:1.6,iso:0,fib:0,salt:.2}},
 
 // ---- リストには入れていないが、入力欄で使えるもの ----
-{id:"salmon",name:"鮭",alias:["鮭","サケ","さけ","しゃけ","サーモン","秋鮭","銀鮭","塩鮭","焼き鮭"],type:"count",unit:"切れ",g:80,n:{p:17.5,kcal:150,c:0,f:8,ca:11,ve:1,iso:0},tag:["fish"]}, // ★
-{id:"ham",name:"ロースハム",alias:["ロースハム","ハム","はむ"],type:"count",unit:"50g",g:50,n:{p:8.5,kcal:110,c:1,f:7,ca:4,ve:.2,iso:0}}, // ★
-{id:"tuna",name:"ツナ缶",alias:["ツナ缶","ツナ","シーチキン"],type:"count",unit:"缶",g:70,n:{p:13,kcal:70,c:.1,f:2,ca:5,ve:.6,iso:0},tag:["fish"]},
-{id:"saladchicken",name:"サラダチキン",alias:["サラダチキン"],type:"count",unit:"個",g:110,n:{p:25,kcal:113,c:.5,f:1.5,ca:5,ve:.3,iso:0}},
-{id:"seseri",name:"せせり",alias:["せせり","セセリ"],type:"weight",unit:"g",n:{p:21,kcal:200,c:0,f:13,ca:5,ve:.3,iso:0}},
-{id:"beefmomo",name:"牛モモ",alias:["牛モモ","牛もも","牛もも肉","牛赤身","ランプ","牛ランプ"],type:"weight",unit:"g",n:{p:21,kcal:130,c:.4,f:5,ca:4,ve:.5,iso:0}},
-{id:"harami",name:"牛ハラミ",alias:["牛ハラミ","ハラミ","はらみ"],type:"weight",unit:"g",n:{p:20,kcal:250,c:.3,f:19,ca:4,ve:.6,iso:0}},
-{id:"tofu",name:"豆腐",alias:["豆腐","とうふ","冷奴","湯豆腐"],type:"count",unit:"150g",g:150,n:{p:10,kcal:100,c:3,f:6,ca:140,ve:.3,iso:40},tag:["soy"]},
-{id:"sausage",name:"ウインナー",alias:["ウインナー","ウィンナー","ソーセージ"],type:"count",unit:"本",g:20,n:{p:2.5,kcal:60,c:.6,f:5.5,ca:2,ve:.1,iso:0}},
-{id:"jerky",name:"ビーフジャーキー",alias:["ビーフジャーキー","ジャーキー"],type:"count",unit:"30g",g:30,n:{p:15,kcal:95,c:2,f:2,ca:6,ve:.2,iso:0}},
-{id:"cheese",name:"チーズ",alias:["チーズ","粉チーズ"],type:"count",unit:"20g",g:20,n:{p:4.5,kcal:68,c:.3,f:5,ca:130,ve:.2,iso:0},tag:["ferment"]},
-{id:"udon",name:"うどん",alias:["うどん","ウドン"],type:"count",unit:"玉",g:230,n:{p:6,kcal:240,c:50,f:1,ca:14,ve:0,iso:0}},
-{id:"yakisoba",name:"焼きそば",alias:["焼きそば","やきそば"],type:"count",unit:"食",g:150,n:{p:7,kcal:220,c:38,f:4,ca:15,ve:.2,iso:0}},
-{id:"potato",name:"ジャガイモ",alias:["ジャガイモ","じゃがいも","ポテト"],type:"count",unit:"個",g:150,n:{p:3,kcal:120,c:26,f:.2,ca:5,ve:.1,iso:0}},
-{id:"sweetpotato",name:"さつまいも",alias:["さつまいも","サツマイモ"],type:"count",unit:"個",g:200,n:{p:2.4,kcal:252,c:63.8,f:.4,ca:72,ve:3,iso:0}},
-{id:"bread",name:"食パン",alias:["食パン","パン","トースト"],type:"count",unit:"枚",g:60,n:{p:5.6,kcal:160,c:28,f:2.6,ca:17,ve:.3,iso:0}},
-{id:"tomato",name:"トマト",alias:["トマト"],type:"count",unit:"個",g:150,n:{p:1,kcal:30,c:7,f:.2,ca:11,ve:1.4,iso:0},tag:["greens"]},
-{id:"minitomato",name:"ミニトマト",alias:["ミニトマト","プチトマト"],type:"count",unit:"個",g:10,n:{p:.1,kcal:3,c:.7,f:0,ca:1,ve:.1,iso:0},tag:["greens"]},
-{id:"nasu",name:"ナス",alias:["ナス","なす","茄子"],type:"count",unit:"本",g:80,n:{p:.9,kcal:18,c:4,f:.1,ca:14,ve:.3,iso:0}},
-{id:"piman",name:"ピーマン",alias:["ピーマン"],type:"count",unit:"個",g:35,n:{p:.3,kcal:8,c:1.8,f:.1,ca:4,ve:.3,iso:0},tag:["greens"]},
-{id:"cabbage",name:"キャベツ",alias:["キャベツ"],type:"weight",unit:"g",n:{p:1.3,kcal:23,c:5,f:.2,ca:43,ve:.1,iso:0}},
-{id:"salad",name:"サラダ",alias:["サラダ","野菜炒め","野菜"],type:"count",unit:"食",g:100,n:{p:2,kcal:45,c:6,f:1.5,ca:35,ve:.5,iso:0},tag:["greens"]},
-{id:"kinoko",name:"きのこ",alias:["きのこ","キノコ","しめじ","舞茸","エリンギ","椎茸"],type:"weight",unit:"g",n:{p:2.7,kcal:18,c:3,f:.4,ca:2,ve:0,iso:0}},
-{id:"misoshiru",name:"味噌汁",alias:["味噌汁","みそ汁","みそしる","お吸い物","吸い物","スープ"],type:"count",unit:"杯",g:200,n:{p:2,kcal:45,c:5,f:1.2,ca:30,ve:.2,iso:6},tag:["ferment","soy"]},
-{id:"banana",name:"バナナ",alias:["バナナ"],type:"count",unit:"本",g:100,n:{p:1.3,kcal:93,c:23,f:.2,ca:6,ve:.5,iso:0}},
-{id:"pumpkinseed",name:"かぼちゃの種",alias:["かぼちゃの種","カボチャの種"],type:"count",unit:"20g",g:20,n:{p:5,kcal:120,c:2,f:10,ca:8,ve:.2,iso:0}},
-{id:"karaage",name:"唐揚げ",alias:["唐揚げ","からあげ","チキンカツ","フライドチキン"],type:"count",unit:"個",g:30,n:{p:5.4,kcal:86,c:3,f:5,ca:3,ve:.4,iso:0}},
-{id:"beer",name:"ビール",alias:["ビール","缶ビール"],type:"count",unit:"350ml",g:350,n:{p:0,kcal:140,c:11,f:0,ca:7,ve:0,iso:0}},
-{id:"creatine",name:"クレアチン",alias:["クレアチン"],type:"count",unit:"5g",g:5,n:{p:0,kcal:0,c:0,f:0,ca:0,ve:0,iso:0}},
+{id:"salmon",name:"鮭",alias:["鮭","サケ","さけ","しゃけ","サーモン","秋鮭","銀鮭","塩鮭","焼き鮭"],type:"count",unit:"切れ",g:80,n:{p:17.5,kcal:150,c:0,f:8,ca:11,ve:1,iso:0,fib:0,salt:.2},tag:["fish"]}, // ★
+{id:"ham",name:"ロースハム",alias:["ロースハム","ハム","はむ"],type:"count",unit:"50g",g:50,n:{p:8.5,kcal:110,c:1,f:7,ca:4,ve:.2,iso:0,fib:0,salt:1.2}}, // ★
+{id:"tuna",name:"ツナ缶",alias:["ツナ缶","ツナ","シーチキン"],type:"count",unit:"缶",g:70,n:{p:13,kcal:70,c:.1,f:2,ca:5,ve:.6,iso:0,fib:0,salt:.6},tag:["fish"]},
+{id:"saladchicken",name:"サラダチキン",alias:["サラダチキン"],type:"count",unit:"個",g:110,n:{p:25,kcal:113,c:.5,f:1.5,ca:5,ve:.3,iso:0,fib:0,salt:1.2}},
+{id:"seseri",name:"せせり",alias:["せせり","セセリ"],type:"weight",unit:"g",n:{p:21,kcal:200,c:0,f:13,ca:5,ve:.3,iso:0,fib:0,salt:.2}},
+{id:"beefmomo",name:"牛モモ",alias:["牛モモ","牛もも","牛もも肉","牛赤身","ランプ","牛ランプ"],type:"weight",unit:"g",n:{p:21,kcal:130,c:.4,f:5,ca:4,ve:.5,iso:0,fib:0,salt:.1}},
+{id:"harami",name:"牛ハラミ",alias:["牛ハラミ","ハラミ","はらみ"],type:"weight",unit:"g",n:{p:20,kcal:250,c:.3,f:19,ca:4,ve:.6,iso:0,fib:0,salt:.1}},
+{id:"tofu",name:"豆腐",alias:["豆腐","とうふ","冷奴","湯豆腐"],type:"count",unit:"150g",g:150,n:{p:10,kcal:100,c:3,f:6,ca:140,ve:.3,iso:40,fib:1.7,salt:0},pk:"soy",tag:["plant","soy"]},
+{id:"sausage",name:"ウインナー",alias:["ウインナー","ウィンナー","ソーセージ"],type:"count",unit:"本",g:20,n:{p:2.5,kcal:60,c:.6,f:5.5,ca:2,ve:.1,iso:0,fib:0,salt:.4}},
+{id:"jerky",name:"ビーフジャーキー",alias:["ビーフジャーキー","ジャーキー"],type:"count",unit:"30g",g:30,n:{p:15,kcal:95,c:2,f:2,ca:6,ve:.2,iso:0,fib:0,salt:1.4}},
+{id:"cheese",name:"チーズ",alias:["チーズ","粉チーズ"],type:"count",unit:"20g",g:20,n:{p:4.5,kcal:68,c:.3,f:5,ca:130,ve:.2,iso:0,fib:0,salt:.6},tag:["ferment"]},
+{id:"udon",name:"うどん",alias:["うどん","ウドン"],type:"count",unit:"玉",g:230,n:{p:6,kcal:240,c:50,f:1,ca:14,ve:0,iso:0,fib:3,salt:.7}},
+{id:"yakisoba",name:"焼きそば",alias:["焼きそば","やきそば"],type:"count",unit:"食",g:150,n:{p:7,kcal:220,c:38,f:4,ca:15,ve:.2,iso:0,fib:4.7,salt:2.5}},
+{id:"potato",name:"ジャガイモ",alias:["ジャガイモ","じゃがいも","ポテト"],type:"count",unit:"個",g:150,n:{p:3,kcal:120,c:26,f:.2,ca:5,ve:.1,iso:0,fib:2.3,salt:0},tag:["plant"]},
+{id:"sweetpotato",name:"さつまいも",alias:["さつまいも","サツマイモ"],type:"count",unit:"個",g:200,n:{p:2.4,kcal:252,c:63.8,f:.4,ca:72,ve:3,iso:0,fib:4.4,salt:0},tag:["plant"]},
+{id:"bread",name:"食パン",alias:["食パン","パン","トースト"],type:"count",unit:"枚",g:60,n:{p:5.6,kcal:160,c:28,f:2.6,ca:17,ve:.3,iso:0,fib:2.5,salt:.7}},
+{id:"tomato",name:"トマト",alias:["トマト"],type:"count",unit:"個",g:150,n:{p:1,kcal:30,c:7,f:.2,ca:11,ve:1.4,iso:0,fib:1.5,salt:0},pk:"tomato",tag:["plant","greens"]},
+{id:"minitomato",name:"ミニトマト",alias:["ミニトマト","プチトマト"],type:"count",unit:"個",g:10,n:{p:.1,kcal:3,c:.7,f:0,ca:1,ve:.1,iso:0,fib:.1,salt:0},pk:"tomato",tag:["plant","greens"]},
+{id:"nasu",name:"ナス",alias:["ナス","なす","茄子"],type:"count",unit:"本",g:80,n:{p:.9,kcal:18,c:4,f:.1,ca:14,ve:.3,iso:0,fib:1.8,salt:0},tag:["plant"]},
+{id:"piman",name:"ピーマン",alias:["ピーマン"],type:"count",unit:"個",g:35,n:{p:.3,kcal:8,c:1.8,f:.1,ca:4,ve:.3,iso:0,fib:.8,salt:0},tag:["plant","greens"]},
+{id:"cabbage",name:"キャベツ",alias:["キャベツ"],type:"weight",unit:"g",n:{p:1.3,kcal:23,c:5,f:.2,ca:43,ve:.1,iso:0,fib:1.8,salt:0},tag:["plant"]},
+{id:"salad",name:"サラダ",alias:["サラダ","野菜炒め","野菜"],type:"count",unit:"食",g:100,n:{p:2,kcal:45,c:6,f:1.5,ca:35,ve:.5,iso:0,fib:1.8,salt:0},tag:["plant","greens"]},
+{id:"kinoko",name:"きのこ",alias:["きのこ","キノコ","しめじ","シメジ","舞茸","まいたけ","マイタケ","えのき","エノキ","えのき茸","エリンギ","椎茸","しいたけ","シイタケ","なめこ"],type:"weight",unit:"g",n:{p:2.7,kcal:18,c:3,f:.4,ca:2,ve:0,iso:0,fib:3.5,salt:0},tag:["plant"]},
+{id:"misoshiru",name:"味噌汁",alias:["味噌汁","みそ汁","みそしる","お吸い物","吸い物","スープ"],type:"count",unit:"杯",g:200,n:{p:2,kcal:45,c:5,f:1.2,ca:30,ve:.2,iso:6,fib:1,salt:1.5},pk:"soy",tag:["plant","ferment","soy"]},
+{id:"banana",name:"バナナ",alias:["バナナ"],type:"count",unit:"本",g:100,n:{p:1.3,kcal:93,c:23,f:.2,ca:6,ve:.5,iso:0,fib:1.1,salt:0},tag:["plant"]},
+{id:"pumpkinseed",name:"かぼちゃの種",alias:["かぼちゃの種","カボチャの種","パンプキンシード"],type:"count",unit:"20g",g:20,n:{p:5.3,kcal:118,c:2.4,f:10.4,ca:9,ve:.1,iso:0,fib:1.5,salt:0},tag:["plant"]}, // 無塩
+{id:"karaage",name:"唐揚げ",alias:["唐揚げ","からあげ","チキンカツ","フライドチキン"],type:"count",unit:"個",g:30,n:{p:5.4,kcal:86,c:3,f:5,ca:3,ve:.4,iso:0,fib:.2,salt:.5}},
+{id:"beer",name:"ビール",alias:["ビール","缶ビール"],type:"count",unit:"350ml",g:350,n:{p:0,kcal:140,c:11,f:0,ca:7,ve:0,iso:0,fib:0,salt:0}},
+{id:"creatine",name:"クレアチン",alias:["クレアチン"],type:"count",unit:"5g",g:5,n:{p:0,kcal:0,c:0,f:0,ca:0,ve:0,iso:0,fib:0,salt:0}},
 ];
 
 /* 最初のリスト（承認済みの並び順）。設定画面で自由に変えられる */
 const DEFAULT_LISTS={
   main:["sasami","chickenbreast","liver","porkloin","pork","beefkoma","chickenthigh","natto","egg","soymilk","soypro","soba","pasta","rice"],
-  beauty:["saba","sabacan","benizake","komatsuna","spinach","tomatocan","tomatojuice","almond","mikan","kiwi","iwashi","broccoli","redpaprika","carrot","kabocha","cocoa","greentea","avocado","blueberry","madai","oyster","mekabu","wakame","kimchi","yogurt","sprout"]
+  health:["mugi","salmon","oliveoil","yogurt","cabbage","mekabu","wakame","kimchi","kinoko","onion","walnut","pumpkinseed","oyster","blueberry","coffee","oatmeal","sprout","garlic","gobou","nagaimo","shijimi","edamame"],
+  beauty:["saba","sabacan","benizake","komatsuna","spinach","tomatocan","tomatojuice","almond","mikan","kiwi","iwashi","broccoli","redpaprika","carrot","kabocha","cocoa","greentea","avocado","madai"]
 };
-const LIST_META=[["main","たんぱく質・炭水化物"],["beauty","美容"]];
+const LIST_META=[["main","たんぱく質・炭水化物"],["health","健康"],["beauty","美容"]];
 const listLabel=k=>(LIST_META.find(x=>x[0]===k)||["",""])[1];
 
-const DEFAULTS={pMin:110,pTarget:130,pMax:150,kcalTarget:2600,isoLimit:75,caTarget:750,veTarget:6};
+const DEFAULTS={pMin:110,pTarget:130,pMax:150,kcalTarget:2600,isoLimit:75,caTarget:750,veTarget:6.5,
+  fibTarget:22,saltLimit:7.5,plantTarget:30,coffeeMax:3};
 const GOALS=[["pTarget","たんぱく質 目標 g"],["pMin","たんぱく質 最低 g"],["pMax","たんぱく質 上限 g"],
-  ["kcalTarget","カロリー 目標 kcal"],["isoLimit","イソフラボン 上限 mg"],["caTarget","カルシウム 目標 mg"],["veTarget","ビタミンE 目標 mg"]];
+  ["kcalTarget","カロリー 目標 kcal"],["isoLimit","イソフラボン 上限 mg"],["caTarget","カルシウム 目標 mg"],["veTarget","ビタミンE 目標 mg"],
+  ["fibTarget","食物繊維 目標 g"],["saltLimit","食塩 上限 g"],["plantTarget","植物 目標 種/週"],["coffeeMax","コーヒー 上限 杯/日"]];
 const EXERCISES=["インクラインチェストプレス","ショルダープレス","サイドレイズ","ペックフライ","ラットプルダウン","チェストサポーテッドロー","インクラインダンベルカール","ロープープレスダウン","レッグカール","レッグプレス","リアレイズ","フェイスプル","ベンチプレス","懸垂"];
 const HINT_DEFAULT="食材と数をまとめて入力できます。数字だけなら卵・納豆は個数、肉・魚のgもそのまま。";
 
@@ -342,8 +393,11 @@ function rebuildFoods(){
   const built=BUILTIN_FOODS.map(b=>{
     const o=OVERRIDES[b.id];
     if(!o)return b;
+    let tag=o.tag||b.tag||[];
+    // v3で直した食材には「植物」の印がないので、元の印を引き継ぐ
+    if(o.tag&&!o.v4&&(b.tag||[]).indexOf("plant")>=0&&tag.indexOf("plant")<0)tag=["plant"].concat(tag);
     return Object.assign({},b,{name:o.name||b.name,alias:o.alias||b.alias,
-      n:Object.assign({},b.n,o.n||{}),tag:o.tag||b.tag||[],edited:true});
+      n:Object.assign({},b.n,o.n||{}),tag,edited:true});
   });
   FOODS=USER_FOODS.concat(built);            // 同じ呼び名なら自分の食材を優先
   FOODS.forEach(f=>{f._al=(f.alias&&f.alias.length?f.alias:[f.name]).map(normalize)});
@@ -355,7 +409,16 @@ const activeFoods=()=>FOODS.filter(f=>!f.deleted);
 function loadLists(){
   const v=LS.get("lists",null);
   if(!v||!Array.isArray(v.main)||!Array.isArray(v.beauty))return clone(DEFAULT_LISTS);
-  return {main:v.main.slice(),beauty:v.beauty.slice()};
+  const out={};
+  LIST_META.forEach(([k])=>{out[k]=Array.isArray(v[k])?v[k].slice():null;});
+  if(!out.health){
+    // v3 → v4：並べ替えはそのまま。健康リストを足し、美容から健康へ移した食材を美容から外す
+    out.health=DEFAULT_LISTS.health.slice();
+    const moved=["oyster","blueberry","mekabu","wakame","kimchi","yogurt","sprout"];
+    out.beauty=out.beauty.filter(id=>moved.indexOf(id)<0);
+    LS.set("lists",out);
+  }
+  return out;
 }
 let LISTS=loadLists();
 const saveLists=()=>LS.set("lists",LISTS);
@@ -378,14 +441,17 @@ const dateLabelOf=k=>{const[y,m,d]=k.split("-").map(Number);
 
 let date=todayKey();
 let settings=Object.assign({},DEFAULTS,LS.get("settings",{}));
+if(settings.veTarget===6&&!settings.v4){settings.veTarget=6.5;}   // 摂取基準2025年版に合わせる（v3の初期値6だけ置き換え）
+settings.v4=true;
 let day=LS.get("log:"+date,{meals:[],workouts:[]});
 let tab="food";
 const saveDay=()=>LS.set("log:"+date,day);
 
 /* ---------- 入力解析 ---------- */
-const UNIT_RE=/(グラム|g|ミリ|ml|切れ|切|合|パック|杯|本|缶|玉|枚|食|個|つ|粒|丁)/;
+const UNIT_RE=/(大さじ|小さじ|グラム|g|ミリ|ml|切れ|切|合|パック|杯|本|缶|玉|枚|食|個|つ|粒|丁|片|皿)/;
 const GRAM_UNITS=["g","グラム","ml","ミリ"];
-const LONE_NUM=/^[0-9.\/半分]+(グラム|g|ミリ|ml|切れ|切|合|パック|杯|本|缶|玉|枚|食|個|つ|粒|丁)?$/;
+const SPOON={"大さじ":15,"小さじ":5};
+const LONE_NUM=/^(大さじ|小さじ)?[0-9.\/半分]+(グラム|g|ミリ|ml|切れ|切|合|パック|杯|本|缶|玉|枚|食|個|つ|粒|丁|片|皿)?$/;
 
 function matchFood(raw){
   let best=null;
@@ -411,6 +477,12 @@ function readNum(rest){
 }
 function calcQty(f,num,unit){
   if(num===null)return 1;                              // 数字なし →「1人前」
+  if(unit&&SPOON[unit]){                               // 醤油大さじ1 → 小さじ3
+    if(f.unit===unit)return num;
+    if(SPOON[f.unit])return num*SPOON[unit]/SPOON[f.unit];
+    if(f.type==="weight")return num*SPOON[unit]/100;
+    return f.g?num*SPOON[unit]/f.g:num;
+  }
   const isGram=!!unit&&GRAM_UNITS.indexOf(unit)>=0;
   const isOther=!!unit&&!isGram;
   if(f.type==="weight"){
@@ -448,11 +520,27 @@ function parseInput(text){
 }
 
 function calcTotals(meals){
-  const t={p:0,kcal:0,c:0,f:0,ca:0,ve:0,iso:0};const tags=new Set();
+  const t={p:0,kcal:0,c:0,f:0,ca:0,ve:0,iso:0,fib:0,salt:0};const tags=new Set();
   for(const m of meals){const f=foodById(m.foodId);if(!f)continue;
     for(const k in t)t[k]+=(f.n[k]||0)*m.qty;
     (f.tag||[]).forEach(x=>tags.add(x));}
   return{t,tags};
+}
+const plantKey=f=>f&&(f.tag||[]).indexOf("plant")>=0?(f.pk||f.id):null;
+
+/* 今週（月曜〜表示中の日）に食べた植物の種類。同じ植物は週1回だけ数える */
+function weekPlants(dateKey,today){
+  const[y,m,d]=dateKey.split("-").map(Number);
+  const dow=(new Date(y,m-1,d).getDay()+6)%7;          // 月曜=0
+  const seen=new Map();
+  for(let i=dow;i>=0;i--){
+    const k=todayKey(new Date(y,m-1,d-i));
+    const log=k===dateKey?today:LS.get("log:"+k,null);
+    if(!log||!log.meals)continue;
+    for(const ml of log.meals){const f=foodById(ml.foodId),pk=plantKey(f);
+      if(pk&&!seen.has(pk))seen.set(pk,pk==="soy"?"大豆":pk==="tomato"?"トマト":f.name);}
+  }
+  return Array.from(seen.values());
 }
 function qtyLabel(f,q){
   if(f.type==="weight")return Math.round(q*100)+"g";
@@ -539,6 +627,41 @@ function renderFood(){
   $("fVal").textContent=Math.round(t.f)+"g";
   $("caVal").textContent=`${Math.round(t.ca)} / ${settings.caTarget}mg`;
   $("veVal").textContent=`${Math.round(t.ve*10)/10} / ${settings.veTarget}mg`;
+  $("veVal").style.color=t.ve>=settings.veTarget?"var(--pine)":"inherit";
+
+  // 食物繊維（目標以上で緑）
+  const fibOk=t.fib>=settings.fibTarget;
+  $("fibVal").textContent=`${fmt(t.fib)} / ${settings.fibTarget}g`;
+  $("fibVal").style.color=fibOk?"var(--pine)":"inherit";
+  $("fibBar").style.width=Math.min(100,t.fib/settings.fibTarget*100)+"%";
+  $("fibBar").style.background=fibOk?"var(--pine)":"var(--indigo)";
+
+  // 食塩（上限を超えたら赤）
+  const saltOver=t.salt>settings.saltLimit;
+  $("saltVal").textContent=`${fmt(t.salt)} / ${settings.saltLimit}g`;
+  $("saltVal").style.color=saltOver?"var(--verm)":"inherit";
+  $("saltBar").style.width=Math.min(100,t.salt/settings.saltLimit*100)+"%";
+  $("saltBar").style.background=saltOver?"var(--verm)":"var(--pine)";
+  if(saltOver){
+    $("saltWarn").classList.remove("hidden");
+    $("saltWarn").textContent=`食塩が ${fmt(t.salt)}g。上限の目安 ${settings.saltLimit}g を超えています。麺や味噌汁の汁を残す、漬物・ハム・缶詰を控える、醤油はかけずにつけるで減らせます。`;
+  }else $("saltWarn").classList.add("hidden");
+
+  // コーヒー（緑内障リスクがあるので1日3杯まで）
+  const cups=day.meals.filter(m=>m.foodId==="coffee").reduce((s,m)=>s+m.qty,0);
+  if(cups>settings.coffeeMax){
+    $("cafWarn").classList.remove("hidden");
+    $("cafWarn").textContent=`コーヒーが ${fmt(cups)}杯。緑内障リスクがあるので1日${settings.coffeeMax}杯までにしてください。このあとは麦茶か水に。`;
+  }else $("cafWarn").classList.add("hidden");
+
+  // 今週の植物の種類
+  const plants=weekPlants(date,day);
+  const plantOk=plants.length>=settings.plantTarget;
+  $("plantVal").textContent=`${plants.length} / ${settings.plantTarget}種`;
+  $("plantVal").style.color=plantOk?"var(--pine)":"inherit";
+  $("plantBar").style.width=Math.min(100,plants.length/settings.plantTarget*100)+"%";
+  $("plantBar").style.background="var(--pine)";
+  $("plantList").textContent=plants.join("・");
   $("chkGreens").className="chk"+(tags.has("greens")?" ok":"");
   $("chkFish").className="chk"+(tags.has("fish")?" ok":"");
   $("chkFerment").className="chk"+(tags.has("ferment")?" ok":"");
@@ -626,10 +749,12 @@ function editorHTML(f,mode){
       ${numField("f","脂質 g",create?null:n.f,"0")}
       ${numField("ca","カルシウム mg",create?null:n.ca,"0")}
       ${numField("ve","ビタミンE mg",create?null:n.ve,"0")}
+      ${numField("fib","食物繊維 g",create?null:n.fib,"0")}
+      ${numField("salt","食塩相当量 g",create?null:n.salt,"0")}
       ${numField("iso","イソフラボン mg（大豆製品のみ）",create?null:n.iso,"0",true)}
-      <div class="span2"><label>種類</label><div class="tagrow">${tagBox("fish","魚")}${tagBox("greens","緑黄色野菜")}${tagBox("ferment","発酵食品")}${tagBox("soy","大豆")}</div></div>`;
+      <div class="span2"><label>種類</label><div class="tagrow">${tagBox("fish","魚")}${tagBox("greens","緑黄色野菜")}${tagBox("ferment","発酵食品")}${tagBox("soy","大豆")}${tagBox("plant","植物（週30種に数える）")}</div></div>`;
   if(create)h+=`<div class="span2"><label>入れるリスト</label><select data-f="list">
-      <option value="main">たんぱく質・炭水化物</option><option value="beauty">美容</option>
+      ${LIST_META.map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}
       <option value="">リストには入れない（入力欄だけで使う）</option></select></div>`;
   h+=`</div><div class="edbtns"><button class="addbtn" data-act="save">${create?"食材を作る":"保存"}</button>
     <button class="ghost" data-act="cancel">やめる</button>`;
@@ -724,7 +849,7 @@ function readEditor(root,create){
   const p=num("p"),kcal=num("kcal");
   if(p===null||kcal===null||isNaN(p)||isNaN(kcal))return{err:"たんぱく質とカロリーは必須です（0以上の数字）"};
   const n={p,kcal};
-  for(const k of ["c","f","ca","ve","iso"]){const v=num(k);if(isNaN(v))return{err:"数字を入れてください"};n[k]=v===null?0:v;}
+  for(const k of ["c","f","ca","ve","fib","salt","iso"]){const v=num(k);if(isNaN(v))return{err:"数字を入れてください"};n[k]=v===null?0:v;}
   const aliasRaw=q("alias").value.trim();
   const alias=aliasRaw?aliasRaw.split(/[,、，]/).map(s=>s.trim()).filter(Boolean):[];
   if(alias.indexOf(name)<0)alias.unshift(name);
@@ -743,7 +868,7 @@ function readEditor(root,create){
 }
 function sameAsBase(b,r){
   if(b.name!==r.name||b.alias.join("|")!==r.alias.join("|"))return false;
-  for(const k of ["p","kcal","c","f","ca","ve","iso"])if(Number(b.n[k]||0)!==Number(r.n[k]||0))return false;
+  for(const k of ["p","kcal","c","f","ca","ve","fib","salt","iso"])if(Number(b.n[k]||0)!==Number(r.n[k]||0))return false;
   return (b.tag||[]).slice().sort().join()===r.tag.slice().sort().join();
 }
 function saveEditor(){
@@ -769,7 +894,7 @@ function saveEditor(){
   if(isBuiltin(f.id)){
     const base=BUILTIN_FOODS.find(b=>b.id===f.id);
     if(sameAsBase(base,r))delete OVERRIDES[f.id];
-    else OVERRIDES[f.id]={name:r.name,alias:r.alias,n:r.n,tag:r.tag};
+    else OVERRIDES[f.id]={name:r.name,alias:r.alias,n:r.n,tag:r.tag,v4:true};
     LS.set("foodOverrides",OVERRIDES);
   }else{
     const u=USER_FOODS.find(x=>x.id===f.id);
